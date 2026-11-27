@@ -1,0 +1,179 @@
+name: LFVM Lydite-Test-Vault isolated installation
+on:
+  push:
+    branches: ['Lydite-Test-Vault']
+    paths: ['.github/workflows/lfvm-install.yml']
+permissions:
+  contents: read
+concurrency:
+  group: lfvm-install-Lydite-Test-Vault
+  cancel-in-progress: false
+env:
+  TOOL_BRANCH: Lydite-Test-Vault
+  SOURCE_REPO: Lydite-Test-Vault-Template
+  SOURCE_SHA: a19c58a5b005bfab3e60b0b16aae13bf01023118
+  VERSION_STATUS: "v0.0.4.75 isolated repair draft; v0.0.4 published; v0.0.5 held; starter component v0.0.3"
+  PURPOSE: "Catalog planned LFVM gate, template and data checks; no claim of workbook validation. Draft copy-in kit is review-only."
+  PYTHONDONTWRITEBYTECODE: '1'
+jobs:
+  prepare:
+    if: github.repository == 'vixttha/LFVM' && github.event.repository.private == false
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Fetch pinned upstream without credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          git init -q "$RUNNER_TEMP/upstream"
+          git -C "$RUNNER_TEMP/upstream" fetch --no-tags --depth=1 "https://github.com/vixttha/$SOURCE_REPO.git" "$SOURCE_SHA"
+          git -C "$RUNNER_TEMP/upstream" checkout --detach "$SOURCE_SHA"
+          test "$(git -C "$RUNNER_TEMP/upstream" rev-parse HEAD)" = "$SOURCE_SHA"
+      - name: Build isolated LFVM package
+        shell: bash
+        run: |
+          python -B - <<'PY'
+          import os, pathlib, shutil, json, hashlib, ast, subprocess
+          src=pathlib.Path(os.environ["RUNNER_TEMP"])/"upstream"
+          out=pathlib.Path(os.environ["RUNNER_TEMP"])/"package"
+          out.mkdir()
+          branch=os.environ["TOOL_BRANCH"]
+          sha=os.environ["SOURCE_SHA"]
+          def copy(s,d=None):
+              p=src/s
+              q=out/(d or s)
+              if p.is_symlink(): raise ValueError("symlink source")
+              if p.is_dir():
+                  for f in p.rglob("*"):
+                      if f.is_symlink(): raise ValueError("symlink source")
+                      if f.is_file(): copy(str(f.relative_to(src)),str(q.relative_to(out)/f.relative_to(p)))
+              elif p.is_file():
+                  q.parent.mkdir(parents=True,exist_ok=True)
+                  shutil.copyfile(p,q)
+              else: raise ValueError("missing "+s)
+          def write(p,s):
+              q=out/p
+              q.parent.mkdir(parents=True,exist_ok=True)
+              q.write_text(s,encoding="utf-8")
+          def put(p,obj): write(p,json.dumps(obj,indent=2,sort_keys=True)+"\n")
+          def get(p): return json.loads((out/p).read_text())
+          if branch=="Version-Issues-Hub":
+              node=next(n for n in ast.parse((src/"tools/install.py").read_text()).body if isinstance(n,ast.Assign) and any(isinstance(t,ast.Name) and t.id=="PACKAGE" for t in n.targets))
+              package=ast.literal_eval(node.value)
+              for s,d in package.items(): copy(s,d)
+              assert "VIB_LICENSE_TERMS_APPROVED" in (out/"VIB-NOTICE.md").read_text().splitlines()
+              put("vib-install.json",{"schema_version":1,"package":"Version-Issues-Hub","source_repository":"vixttha/Version-Issues-Hub","source_sha":sha,"target_repository":"vixttha/LFVM","target_repository_id":1473814679,"product_branch":"main","product_baseline_sha":"de4503a783504dcdfc066482bfbf004e9b0287fe","install_branch":branch,"baseline_version":"v0.0.0","target_version":"v0.0.1","enforcement":"disabled","package_files_sha256":{d:hashlib.sha256((out/d).read_bytes()).hexdigest() for d in package.values()}})
+              put("ledger/issue-versions.json",{"schema_version":1,"repository":"vixttha/LFVM","issues":[]})
+              put("ledger/handoff.json",{"schema_version":1,"active":None,"history":[]})
+          elif branch=="Provenistem":
+              for p in (src/"packages/provenistem").iterdir(): copy(str(p.relative_to(src)),p.name)
+              idea=get("templates/idea.example.json")
+              idea.update(title="Separate reusable blank template from research library",summary="Maintain independent template and populated spreadsheet editions; do not import or publish before foundation acceptance.",origin={"created_by":"human","source":"LFVM permanent branch instructions and owner-approved project direction"},categories=["workflow"],benefits=["Preserves versioned template and data separation"],risks=["Schema changes require coordinated review"])
+              put("ideas/records/IDEA-000001.json",idea)
+              for i,title,summary,criterion in [(1,"Blank spreadsheet template","Design an LLM-readable, portable blank spreadsheet template.","Accepted template version, exact commit and workbook digest exist before population."),(2,"Free virtual machine research library","Classify free compute offers using public evidence and the accepted template.","No filled workbook is locked before accepted blank template and evidence validation.")]:
+                  f=get("templates/feature.example.json")
+                  f.update(id=f"FEAT-{i:06d}",title=title,summary=summary,idea_ids=["IDEA-000001"],acceptance_criteria=[criterion])
+                  put("features/records/"+f["id"]+".json",f)
+          elif branch=="Lydite-Test-Vault":
+              copy("starter/test-vault","test-vault")
+              write("test-vault/cases.md","# LFVM planned verification cases\n\nThese are declarations, not proof of execution or workbook acceptance.\n\n| Case | Area | Priority | Suggested implementation | Expected outcome |\n|---|---|---|---|---|\n| LFVM-001 | Foundation | P0 | Existing template and library regression suites | Both independent pre-build gates remain intact |\n| LFVM-002 | Template | P0 | Exact artifact and SHA-256 check | Accepted blank workbook required before data population |\n| LFVM-003 | Library | P0 | Schema and evidence checks | Offers have traceable evidence and valid taxonomy |\n| LFVM-004 | Safety | P0 | Negative fixtures | Reject untrusted input and private data |\n| LFVM-005 | History | P0 | Version archive checks | Locked versions and source pins remain immutable |\n")
+          elif branch=="Veraphify":
+              for p in ["veraphifiy.mjs","LICENSE","docs/reuse.md","docs/adopter-walkthrough.md"]: copy(p)
+              (out/"archives").mkdir()
+              write("archives/README.md","# LFVM archive\n\nNo accepted LFVM feature archive exists yet. Import only exact LFVM revisions with genuine receipts, verified digests and owner scope. No upstream archives or sample fixture outputs are stored here.\n")
+              write("README.md","# LFVM Veraphify\n\nUse the pinned CLI: node veraphifiy.mjs --help. Import, verify and lookup require a real LFVM source/evidence pair. See [walkthrough](docs/adopter-walkthrough.md), [reuse](docs/reuse.md), [archive](archives/README.md), and [provenance](LFVM-CONTEXT.md). The walkthrough uses disposable synthetic fixtures, not LFVM records.\n")
+          elif branch=="readme-hq":
+              for p in ["README-GUIDE.md","REUSE.md","tools/check_readme_hq.py","tools/hq_data.py","tools/hq_navigation.py","tools/hq_smoke.py","tools/requirements.txt","tools/markdown-requirements.txt","examples/first_action_demo.py"]: copy(p)
+              write("README.md","# LFVM README HQ\n\nDocumentation workspace for the Library of Free Virtual Machines. The current spreadsheet template and research library are separate pre-build branches. No workbook, release or free-provider guarantee is claimed. Start with [guide](README-GUIDE.md) and [LFVM context](LFVM-CONTEXT.md). Use the pinned reader CLI against an explicitly selected LFVM revision: python tools/check_readme_hq.py --help. This is a review-only draft; no homepage publication is authorized.\n")
+              write("AGENTS.md","# LFVM README HQ agent\n\nRead README.md, README-GUIDE.md and LFVM-CONTEXT.md. Audit only owner-selected LFVM refs, preserve actual evidence and distinguish planned work from completed work. Do not modify main, publish a README or claim release approval. Use the upstream technique library as optional read-only reference.\n")
+          elif branch=="Brand-Identity":
+              copy("brand-identity")
+              manifest=get("brand-identity/09-assets/manifest.json")
+              manifest["kind"]="project"
+              put("brand-identity/09-assets/manifest.json",manifest)
+              decision=get("brand-identity/01-strategy/creative-decision.json")
+              decision["names"]={"product":"Library of Free Virtual Machines","wordmark":"LFVM"}
+              put("brand-identity/01-strategy/creative-decision.json",decision)
+              p="brand-identity/01-strategy/brief.md"
+              write(p,(out/p).read_text()+"\n## LFVM working brief (proposed)\n\nA searchable evidence-backed library of free cloud computing offers. Audience: humans and agents comparing free resources. First surface: GitHub README and spreadsheet metadata. Desired qualities: clarity, trustworthy evidence, legibility at small sizes. Proposed product name: Library of Free Virtual Machines; proposed wordmark: LFVM. No owner name confirmation, scored concept, asset, color lock or artwork approval recorded.\n")
+              write("README.md","# LFVM Brand Identity\n\nStart at [brand kit](brand-identity/README.md), [working brief](brand-identity/01-strategy/brief.md) and [context](LFVM-CONTEXT.md). No brand identity has been locked; do not create or publish artwork without the owner gate.\n")
+          else: raise ValueError(branch)
+          if branch not in ("Version-Issues-Hub","readme-hq"):
+              entry={"Provenistem":"LIBRARY-AGENT-GUIDE.md","Lydite-Test-Vault":"test-vault/README.md","Veraphify":"README.md","Brand-Identity":"brand-identity/README.md"}[branch]
+              write("AGENTS.md","# LFVM "+branch+" agent\n\nRead "+entry+" and LFVM-CONTEXT.md. Work only on this dedicated LFVM branch; owner controls scope, integration and release. No cross-branch writes or workbook creation under the pre-build gate. Use free public GitHub runners. Preserve exact evidence; no automatic release or paid dependency.\n")
+          write("LFVM-CONTEXT.md","# LFVM tool context\n\nRepository: vixttha/LFVM. Dedicated branch: "+branch+". Source: https://github.com/vixttha/"+os.environ["SOURCE_REPO"]+"/tree/"+sha+".\n\nVersion status: "+os.environ["VERSION_STATUS"]+".\n\n"+os.environ["PURPOSE"]+"\n\nTemplate and library branches are pre-build only. No accepted workbook or imported provider records are asserted. No integration into main, no paid runner, no mandatory sibling tool. Source-code copyright notices are retained. This branch installation does not constitute an upstream release or rights grant.\n")
+          
+          PY
+      - name: Native smoke and negative or regression controls
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/package"
+          python -B test-vault/validate_catalog.py && python -B test-vault/verify_receipts.py --help && (cd "$RUNNER_TEMP/upstream" && python -B -m unittest discover -s tools -p test_starter_receipts.py -v)
+      - name: Seal validated package
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/package"
+          python -B - <<'PY'
+          import pathlib, hashlib, json, os
+          root=pathlib.Path(".")
+          files={str(p):hashlib.sha256(p.read_bytes()).hexdigest() for p in root.rglob("*") if p.is_file()}
+          assert all(not p.is_symlink() for p in root.rglob("*"))
+          assert all(not x.startswith(".git/") and not x.endswith(".pyc") for x in files)
+          pathlib.Path("LFVM-INSTALL.json").write_text(json.dumps({"repository":"vixttha/LFVM","branch":os.environ["TOOL_BRANCH"],"source_repository":"vixttha/"+os.environ["SOURCE_REPO"],"source_sha":os.environ["SOURCE_SHA"],"version_status":os.environ["VERSION_STATUS"],"validation_run":os.environ["GITHUB_RUN_ID"],"attempt":os.environ["GITHUB_RUN_ATTEMPT"],"bootstrap_sha":os.environ["GITHUB_SHA"],"native_checks":"passed","files_sha256":files},indent=2,sort_keys=True)+"\n")
+          PY
+          tar -cf "$RUNNER_TEMP/package.tar" .
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: lfvm-package
+          path: ${{ runner.temp }}/package.tar
+          if-no-files-found: error
+  publish:
+    needs: prepare
+    if: github.repository == 'vixttha/LFVM' && github.event.repository.private == false
+    permissions:
+      contents: write
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.sha }}
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: lfvm-package
+          path: ${{ runner.temp }}/sealed
+      - name: Verify sealed package and publish only dedicated branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = "refs/heads/$TOOL_BRANCH"
+          test "$(git ls-remote origin "$GITHUB_REF" | cut -f1)" = "$GITHUB_SHA"
+          test "$(git ls-remote origin refs/heads/main | cut -f1)" = "de4503a783504dcdfc066482bfbf004e9b0287fe"
+          python -B - <<'PY'
+          import pathlib, hashlib, json, os, tarfile, shutil
+          root=pathlib.Path(os.environ["RUNNER_TEMP"])/"readback"
+          root.mkdir()
+          with tarfile.open(pathlib.Path(os.environ["RUNNER_TEMP"])/"sealed/package.tar") as t:
+              for m in t.getmembers():
+                  p=pathlib.PurePosixPath(m.name)
+                  assert not p.is_absolute() and ".." not in p.parts and ".git" not in p.parts and ".github" not in p.parts and (m.isfile() or m.isdir())
+              t.extractall(root,filter="data")
+          manifest=json.loads((root/"LFVM-INSTALL.json").read_text())
+          assert manifest["repository"]=="vixttha/LFVM" and manifest["branch"]==os.environ["TOOL_BRANCH"] and manifest["source_sha"]==os.environ["SOURCE_SHA"] and manifest["bootstrap_sha"]==os.environ["GITHUB_SHA"] and manifest["native_checks"]=="passed"
+          files={str(p.relative_to(root)):hashlib.sha256(p.read_bytes()).hexdigest() for p in root.rglob("*") if p.is_file() and p.name!="LFVM-INSTALL.json"}
+          assert files==manifest["files_sha256"]
+          for p in root.iterdir():
+              dest=pathlib.Path(p.name)
+              assert not dest.exists()
+              if p.is_dir(): shutil.copytree(p,dest)
+              else: shutil.copy2(p,dest)
+          PY
+          git rm .gitkeep
+          git add --all
+          git -c user.name=github-actions -c user.email=41898282+github-actions[bot]@users.noreply.github.com commit -m "Install exact validated LFVM tool package"
+          git push origin "HEAD:$GITHUB_REF"
+          test "$(git ls-remote origin "$GITHUB_REF" | cut -f1)" = "$(git rev-parse HEAD)"
+          test "$(git ls-remote origin refs/heads/main | cut -f1)" = "de4503a783504dcdfc066482bfbf004e9b0287fe"
+          echo "Installed revision: $(git rev-parse HEAD)" >> "$GITHUB_STEP_SUMMARY"
