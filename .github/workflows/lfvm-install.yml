@@ -109,7 +109,9 @@ jobs:
         run: |
           set -euo pipefail
           cd "$RUNNER_TEMP/package"
-          python -B brand-identity/verify.py && (cd "$RUNNER_TEMP/upstream" && python -B -m unittest discover -s brand-identity -p 'test_*.py' -v) && if python -B brand-identity/verify.py --ready-for-artwork; then exit 1; fi
+          python -B brand-identity/verify.py
+          (cd "$RUNNER_TEMP/upstream" && python -B -m unittest discover -s brand-identity -p 'test_*.py' -v)
+          if python -B brand-identity/verify.py --ready-for-artwork; then exit 1; fi
       - name: Seal validated package
         shell: bash
         run: |
