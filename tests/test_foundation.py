@@ -127,6 +127,19 @@ class FoundationTests(unittest.TestCase):
         with self.assertRaises(Invalid): strict_json(b'{"a":1,"a":2}')
     def test_json_nonfinite(self):
         with self.assertRaises(Invalid): strict_json(b'{"a":NaN}')
+    def test_json_overflow_and_surrogate(self):
+        for bad in (b'{"a":1e999}', b'{"a":-1e999}', b'{"a":"\\ud800"}'):
+            with self.subTest(bad=bad),self.assertRaises(Invalid): strict_json(bad)
+    def test_json_depth(self):
+        with self.assertRaises(Invalid): strict_json(b"["*34+b"0"+b"]"*34)
+    def test_contract_drift(self):
+        for kind in CONFIG:
+            with tempfile.TemporaryDirectory() as tmp:
+                root=Path(tmp);fixture(root,kind)
+                path=root/"schemas"/"foundation-contract.json"
+                data=json.loads(path.read_bytes());data["publication"]["main_writes"]=True
+                write(path,data)
+                with self.assertRaises(Invalid): validate(root,kind)
     def test_json_limit(self):
         with self.assertRaises(Invalid): strict_json(b" "*262145)
     def test_version_grammar(self):
@@ -190,6 +203,9 @@ class PackageTests(unittest.TestCase):
     def test_macro_part(self): self.package({"xl/vbaProject.xml":"<x/>"})
     def test_embedded_part(self): self.package({"xl/embeddings/x.xml":"<x/>"})
     def test_external_relationship(self): self.package({"_rels/.rels":'<Relationships><Relationship TargetMode="External" Target="https://example.org"/></Relationships>'})
+    def test_missing_internal_target(self): self.package({"_rels/.rels":'<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="r1" Type="urn:synthetic" Target="xl/absent.xml"/></Relationships>'})
+    def test_internal_target(self): self.package({"_rels/.rels":'<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="r1" Type="urn:synthetic" Target="xl/workbook.xml"/></Relationships>'},good=True)
+    def test_duplicate_relationship_id(self): self.package({"_rels/.rels":'<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="r1" Type="urn:synthetic" Target="xl/workbook.xml"/><Relationship Id="r1" Type="urn:synthetic" Target="xl/workbook.xml"/></Relationships>'})
     def test_xml_entity(self): self.package({"xl/workbook.xml":'<!DOCTYPE x [<!ENTITY y "unsafe">]><x/>'})
     def test_zip_ratio(self): self.package({"xl/big.xml":"<x>"+"a"*1000000+"</x>"})
     def test_invalid_bytes(self):
