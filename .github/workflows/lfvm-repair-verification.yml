@@ -1,0 +1,43 @@
+name: LFVM readme-hq permanent verification
+on:
+  push:
+    branches: ['readme-hq']
+  pull_request:
+    branches: ['readme-hq']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: lfvm-verify-readme-hq-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  verify:
+    if: github.repository == 'vixttha/LFVM' && github.event.repository.private == false && (github.event_name != 'workflow_dispatch' || github.ref == 'refs/heads/readme-hq')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Verify exact checkout and historical installation
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          python -B tools/verify_lfvm_repair.py
+      - name: Native positive and negative regression checks
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --require-hashes -r tools/requirements.txt
+          python -B tools/check_readme_hq.py --help
+          python -B examples/first_action_demo.py "$RUNNER_TEMP/reader-example"
+      - name: Record exact checkout and clean state
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -z "$(git status --porcelain)"
+          printf 'LFVM verification checkout: %s\nRun / attempt: %s / %s\nScope: installation and regression controls only; no workbook or release acceptance.\n' "$(git rev-parse HEAD)" "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" >> "$GITHUB_STEP_SUMMARY"

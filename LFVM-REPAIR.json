@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "repository": "vixttha/LFVM",
+  "branch": "readme-hq",
+  "base_commit": "fde4e584c13cc46d4862566f74ca862a98ffb578",
+  "findings": [
+    "Missing audit workflow target",
+    "Missing history source records target"
+  ],
+  "links": [
+    {
+      "source": "README-GUIDE.md",
+      "target": "audits/README.md"
+    },
+    {
+      "source": "REUSE.md",
+      "target": "history/README.md"
+    }
+  ],
+  "added_paths": [
+    ".github/workflows/lfvm-repair-verification.yml",
+    "LFVM-REPAIR.json",
+    "audits/README.md",
+    "history/README.md",
+    "tools/verify_lfvm_repair.py"
+  ],
+  "scope": "Additive repair; original LFVM-INSTALL.json is historical; current validation requires exact-checkout workflow evidence. No upstream version promotion, workbook creation, cross-branch write or release."
+}
