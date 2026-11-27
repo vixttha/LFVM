@@ -32,16 +32,18 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python -B test-vault/validate_catalog.py
+          args=()
+          if [[ -e test-vault/topics.json || -L test-vault/topics.json ]]; then args+=(--topics test-vault/topics.json); fi
+          python -B test-vault/validate_catalog.py "${args[@]}"
           tmp=$(mktemp -d)
           trap 'rm -rf "$tmp"' EXIT
           python - "$tmp" <<'PY'
           import pathlib, sys
           root=pathlib.Path(sys.argv[1])
-          s=pathlib.Path("test-vault/cases.md").read_text()
-          row=next(l for l in s.splitlines() if l.startswith("| LFVM-"))
+          row="| QA-001 | Synthetic catalog control | P0 | Python | Expected result |"
+          s="# Synthetic controls\n\n| Case | Area | Priority | Suggested implementation | Expected outcome |\n|---|---|---|---|---|\n"+row+"\n"
           (root/"bad-priority.md").write_text(s.replace("| P0 |","| P9 |",1))
-          (root/"duplicate.md").write_text(s.rstrip()+"\n"+row+"\n")
+          (root/"duplicate.md").write_text(s+row+"\n")
           PY
           for fixture in bad-priority duplicate; do
             if python -B test-vault/validate_catalog.py --catalog "$tmp/$fixture.md" >"$tmp/$fixture.log" 2>&1; then
@@ -52,7 +54,7 @@ jobs:
           mkdir "$tmp/fixture" "$tmp/receipts"
           cp -R test-vault "$tmp/fixture/"
           cd "$tmp/fixture"
-          printf '\n| CLI-001 | Synthetic receipt example | P0 | Node and Python | Exact shared evidence verified |\n' >> test-vault/cases.md
+          printf '%s\n' '# Synthetic receipt fixture' '' '| Case | Area | Priority | Suggested implementation | Expected outcome |' '|---|---|---|---|---|' '| CLI-001 | Synthetic receipt example | P0 | Node and Python | Exact shared evidence verified |' > test-vault/cases.md
           git init -q
           git add .
           git -c user.name=LFVM-fixture -c user.email=fixture@example.invalid commit -qm "Synthetic receipt fixture"
