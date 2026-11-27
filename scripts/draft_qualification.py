@@ -16,7 +16,9 @@ from xml.etree import ElementTree as ET
 
 from foundation import Invalid, require, strict_json, preflight_xlsx, streaming_sha256, regular, read_bytes, portable_name
 from qualification import canonical, digest, public_text, reconcile_sources, artifact_inventory
-from draft_records import validate_records, scalar, RESEARCH
+from draft_records import validate_records, scalar, RESEARCH, check_id
+from qualification import path_parts
+from foundation import version
 from workbook_design import validate_design
 
 M = "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}"
@@ -169,6 +171,55 @@ def rels(parts, owner):
         out[rid]=(r.get("Type"),resolved)
     return out
 
+def control_tables(schema, control, counts, filename, blank):
+    """Validate exact dictionary/taxonomy inventory and initial local manifest."""
+    tables={t["sheet"]:t for t in schema["tables"]}
+    expected={}
+    for table,t in tables.items():
+        for c in t["columns"]:
+            key=table+"."+c["name"]
+            expected[key]={"field_id":key,"table_name":table,"column_name":c["name"],
+                           "data_type":c["type"],"required":c["required"],"description":c["description"],
+                           "foreign_key":t.get("foreign_keys",{}).get(c["name"])}
+    seen=set()
+    for row in control["02_DICTIONARY"]:
+        key=row["field_id"]
+        require(type(key) is str and key in expected and key not in seen,"unknown or duplicate dictionary field")
+        for k,v in expected[key].items():
+            require(equal_value(row[k],v),"dictionary differs from draft schema: "+key)
+        if row["unit_rule"] is not None: public_text(row["unit_rule"])
+        seen.add(key)
+    require(seen==set(expected),"incomplete dictionary")
+    expected_tax={family+":"+code:(family,code) for family,values in schema["enums"].items() for code in values}
+    seen=set()
+    for row in control["03_TAXONOMY"]:
+        key=row["taxonomy_id"]
+        require(type(key) is str and key in expected_tax and key not in seen,"unknown or duplicate taxonomy ID")
+        require((row["family"],row["code"])==expected_tax[key],"taxonomy code mismatch")
+        for k in ("display_label","definition"):
+            require(type(row[k]) is str and bool(row[k].strip()),"missing taxonomy label/definition")
+            public_text(row[k])
+        require(row["deprecated"] is False and row["replacement_id"] is None,"unexpected taxonomy retirement")
+        seen.add(key)
+    require(seen==set(expected_tax),"incomplete taxonomy")
+    seen=set();ids=set();datasets=set();editions=set()
+    for row in control["01_MANIFEST"]:
+        table=row["table_name"];pid=row["partition_id"];dataset=row["dataset_id"]
+        require(type(table) is str and table in tables and table not in seen,"unexpected or duplicate manifest table")
+        require(check_id(pid) and pid not in ids and check_id(dataset),"invalid partition/dataset ID")
+        require(row["schema_version"]==schema["template_version"],"manifest schema version mismatch")
+        require(type(row["relative_path"]) is str and row["relative_path"]==filename,"local workbook manifest path mismatch")
+        path_parts(row["relative_path"])
+        require(type(row["record_count"]) is int and row["record_count"]==counts[table],"manifest record count mismatch")
+        require(row["partition_state"]=="active" and row["previous_partition_id"] is None and row["artifact_sha256"] is None,"invalid initial local partition metadata")
+        if blank: require(row["data_version"] is None,"data edition in blank template")
+        else: version(row["data_version"])
+        editions.add(row["data_version"]);datasets.add(dataset);seen.add(table);ids.add(pid)
+    require(seen==set(tables) and len(datasets)==1 and len(editions)==1,"incomplete or inconsistent manifest")
+    research_ids={r for r in ids}
+    require(not research_ids.intersection(datasets),"dataset ID collides with partition ID")
+    return ids|datasets
+
 def read_draft_xlsx(path,schema,*,blank):
     """Strict, macro-free canonical subset. Date fields must be ISO text.
 
@@ -177,10 +228,21 @@ def read_draft_xlsx(path,schema,*,blank):
     """
     validate_design(schema)
     require(type(blank) is bool,"explicit blank/filled mode")
-    original=preflight_xlsx(path)
-    with zipfile.ZipFile(path) as z:
-        parts={i.filename:ET.fromstring(z.read(i)) for i in z.infolist()}
-    require(streaming_sha256(path)==original,"workbook changed while reading")
+    require(path.suffix==".xlsx","XLSX suffix required")
+    # All parsing uses one bounded byte snapshot, never reopens mutable input.
+    raw=read_bytes(path,104857600)
+    original=digest(raw)
+    with tempfile.TemporaryDirectory() as temp:
+        staged=Path(temp)/"snapshot.xlsx"
+        staged.write_bytes(raw)
+        require(preflight_xlsx(staged)==original,"staged workbook digest mismatch")
+        with zipfile.ZipFile(staged) as z:
+            parts={i.filename:ET.fromstring(z.read(i)) for i in z.infolist()}
+    ct="{http://schemas.openxmlformats.org/package/2006/content-types}"
+    overrides={n.get("PartName"):n.get("ContentType") for n in parts["[Content_Types].xml"] if n.tag==ct+"Override"}
+    require(overrides.get("/xl/workbook.xml")=="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml","incorrect workbook content type")
+    office=[n for n in parts["_rels/.rels"] if n.get("Type")==T+"officeDocument"]
+    require(len(office)==1 and office[0].get("Target") in {"xl/workbook.xml","/xl/workbook.xml"},"wrong root workbook relationship")
     for root in parts.values():
         for n in root.iter():
             local=n.tag.rsplit("}",1)[-1]
@@ -189,17 +251,19 @@ def read_draft_xlsx(path,schema,*,blank):
     sheets=wb.find(M+"sheets")
     require(sheets is not None and [s.get("name") for s in sheets]==schema["sheet_order"],"sheet names/order mismatch")
     wb_rels=rels(parts,"xl/workbook.xml")
-    shared=[]
+    shared=[]; shared_seen=False
     for typ,target in wb_rels.values():
         if typ==T+"sharedStrings":
-            require(not shared,"multiple shared-string parts")
+            require(not shared_seen,"multiple shared-string parts")
+            shared_seen=True
             require(parts[target].tag==M+"sst","invalid shared strings")
             shared=["".join(n.text or "" for n in si.iter(M+"t")) for si in parts[target]]
             require(len(shared)<=MAX_ROWS*10,"shared-string limit")
     tablemap={t["sheet"]:t for t in schema["tables"]}
     data={name:[] for name in RESEARCH}
     used_parts=set();used_tables=set();used_sheet_ids=set()
-    counts={}
+    counts={}; control={t["sheet"]:[] for t in schema["tables"] if t.get("control") is True}
+    table_names=set(); table_ids=set()
     for s in sheets:
         name=s.get("name");rid=s.get(R+"id");sid=s.get("sheetId")
         require(s.get("state","visible")=="visible" and sid and sid not in used_sheet_ids,"hidden or duplicate sheet")
@@ -208,6 +272,7 @@ def read_draft_xlsx(path,schema,*,blank):
         part=wb_rels[rid][1]
         require(part not in used_parts,"worksheet part reused");used_parts.add(part)
         root=parts[part]
+        require(overrides.get("/"+part)=="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml","incorrect worksheet content type")
         require(root.tag==M+"worksheet","worksheet root")
         for n in root.iter():
             if n.tag in {M+"row",M+"col"}: require(n.get("hidden","0") in {"0","false"},"hidden row or column")
@@ -241,6 +306,10 @@ def read_draft_xlsx(path,schema,*,blank):
         target=tr[table_id][1]
         require(target not in used_tables,"table part reused");used_tables.add(target)
         table=parts[target];end=col_name(width)+str(len(rows))
+        require(overrides.get("/"+target)=="application/vnd.openxmlformats-officedocument.spreadsheetml.table+xml","incorrect table content type")
+        tn=table.get("displayName","").casefold();tid=table.get("id","")
+        require(tn and tn not in table_names and re.fullmatch(r"[1-9][0-9]*",tid) and tid not in table_ids,"duplicate or invalid table identity")
+        table_names.add(tn);table_ids.add(tid)
         require(table.tag==M+"table" and table.get("ref")=="A1:"+end and table.get("headerRowCount","1")=="1" and table.get("totalsRowCount","0")=="0","invalid table bounds")
         tc=table.find(M+"tableColumns")
         require(tc is not None and tc.get("count")==str(width) and [c.get("name") for c in tc]==headers,"table column metadata mismatch")
@@ -251,11 +320,16 @@ def read_draft_xlsx(path,schema,*,blank):
             if name in RESEARCH:
                 require(not blank,"research data in blank workbook")
                 data[name].append(record)
+            else:
+                control[name].append(record)
         counts[name]=len(rows)-1
     require(len(used_parts)==12 and len(used_tables)==11,"incomplete workbook inventory")
     require({n for n in parts if re.fullmatch(r"xl/worksheets/[^/]+\.xml",n)}==used_parts,"orphan worksheet")
     require({n for n in parts if re.fullmatch(r"xl/tables/[^/]+\.xml",n)}==used_tables,"orphan table")
     validate_records(schema,data)
+    control_ids=control_tables(schema,control,counts,path.name,blank)
+    research_ids={r[t["primary_key"]] for t in schema["tables"] if t["sheet"] in RESEARCH for r in data[t["sheet"]]}
+    require(not control_ids.intersection(research_ids),"control and research IDs collide")
     return {"sha256":original,"table_rows":counts,"research":data,"workbook_qualified":False}
 
 def verify_migration(schema, snapshot, snapshot_sha, ledger, source, result, as_of):

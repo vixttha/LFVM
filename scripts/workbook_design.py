@@ -18,6 +18,8 @@ def validate_design(schema):
         require(type(name) is str and NAME.fullmatch(name) and type(values) is list and values and all(type(x) is str and x for x in values) and len(values) == len(set(values)), "enum invalid")
     for name, expected in {"free_class":["F0","F1","F2","F3","F4","F5"],"trust":["A","B","C","U"],"access":["Public","Approval","Restricted","Closed","Unverified"],"billing_risk":["R0","R1","R2","R3","R4","RU"],"evidence_grade":["E0","E1","E2","E3","E4","E5","E6"]}.items():
         require(enums.get(name) == expected, "legacy classification drift")
+    require(enums.get("compute") == ["Virtual machines","GPU computing","CPU computing","Cloud development","CI/CD runners","Containers","Serverless computing","Sponsored infrastructure"], "original compute taxonomy drift")
+    require(enums.get("secondary") == ["GPU notebooks","Research infrastructure","Shared shells","API-only services","Other"], "original secondary taxonomy drift")
     tables = schema.get("tables")
     require(type(tables) is list and all(type(t) is dict for t in tables) and [t.get("sheet") for t in tables] == list(SHEETS[1:]), "table order")
     by_sheet = {t["sheet"]:t for t in tables}
