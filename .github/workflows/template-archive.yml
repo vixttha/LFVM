@@ -12,6 +12,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest]
+        python: ['3.11', '3.14']
     runs-on: ${{ matrix.os }}
     timeout-minutes: 10
     steps:
@@ -19,6 +20,9 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: ${{ matrix.python }}
       - name: Record runtime
         run: python --version
       - name: Validate archive and exact CI identity
