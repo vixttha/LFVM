@@ -1,15 +1,31 @@
-name: Filled library archive integrity
+name: LFVM foundation metadata and regression checks
 on:
   push:
     branches: [library-of-free-virtual-machines-spreadsheet-library]
-  workflow_dispatch:
+  pull_request:
+    branches: [library-of-free-virtual-machines-spreadsheet-library]
 permissions:
   contents: read
 jobs:
-  archive:
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
+  foundation:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-      - name: Validate library archive metadata (not data qualification)
-        run: python3 scripts/validate_library_archive.py
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Record runtime
+        run: python --version
+      - name: Validate archive and exact CI identity
+        run: python -B scripts/validate_library_archive.py --ci
+      - name: Normal regression suite
+        run: python -B -m unittest discover -s tests -v
+      - name: Optimized regression suite
+        run: python -O -B -m unittest discover -s tests -v
+      - name: Optimized archive gate
+        run: python -O -B scripts/validate_library_archive.py --ci

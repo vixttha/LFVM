@@ -16,3 +16,6 @@ States: blocked_on_template, planned, approved, implementing, validating, review
 For the initial 54 source records, capture a public-safe immutable input snapshot and digest, preserve every source record ID with a mapping to normalized IDs or explicit disposition, and reconcile counts. Do not infer that all source records are current or free. Reverify material claims when stale; unknown or contradictory values stay explicit. Subsequent releases record added/changed/removed-from-current/expired/corrected offers, provider deduplication, evidence changes and risk reclassifications, never silently erase history.
 
 Version lock requires exact template binding, owner approval, artifact inventory and SHA-256 digests, reconciled source counts, completed tests, exact commit/runner evidence and comparison. Record commit hash in an external or subsequent receipt to avoid self-referential hashes. No real account signups, private data access or payment tests without specific authorization.
+
+## Current implementation boundary
+The state model above describes the intended future lifecycle. The executable [foundation gate](FOUNDATION-GATE.md) currently admits only pre-build states. A successor contract and verified release mechanism are necessary before advancing. Metadata CI is never workbook qualification or owner approval.
