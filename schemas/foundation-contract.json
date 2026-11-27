@@ -124,7 +124,7 @@
   ],
   "release_gate": {
     "enabled": false,
-    "reason": "No accepted workbook, independently trusted owner receipt source, or qualified release verifier exists. Contract v1 rejects any artifact, implementation, import, qualification or lock state.",
+    "reason": "No accepted workbook, independently configured production approval trust roots, or integrated independent production retrieval/runner-evidence adapter exists. Contract v1 rejects any artifact, implementation, import, qualification or lock state.",
     "requirements": [
       "Trusted external owner scope and exact-candidate acceptance receipts; candidate cannot self-authorize",
       "Immutable candidate commit and SHA-256 artifact/partition inventory; ancestry and historical accepted-byte protection",
