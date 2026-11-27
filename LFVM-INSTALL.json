@@ -1,0 +1,25 @@
+{
+  "attempt": "1",
+  "bootstrap_sha": "7abdee17f5c5363b35524647f484d7664f954eae",
+  "branch": "readme-hq",
+  "files_sha256": {
+    "AGENTS.md": "a10b4307e592c9e4c1d1704dd04e8876daab871d6cdfd8dde8b587cbb425111b",
+    "LFVM-CONTEXT.md": "6a43a6f2ff0572c408b5635d72c61092d56ad61c8909246b2af0a0a9851be50b",
+    "README-GUIDE.md": "e1dc82aac196bc487a2b9d5f23aba75750d8cdb4b13694d13857b57e1a7cb075",
+    "README.md": "99b10e22a4adddbec4a4ef41b3f20544c36026abe47754fbb3f04d53e1494106",
+    "REUSE.md": "81a542914afca2a53137f1bc0e78d94aafda2e739e200d2abc2341c5c3ea5de1",
+    "examples/first_action_demo.py": "97b319b18ef2541c777c0b3ba3471cb3eb1fe08fcabec37211398afdb3ad1a70",
+    "tools/check_readme_hq.py": "d254804dba32f043a431eae1ea62d9bec79b50973a9338f1c1b416b0cfc02ddd",
+    "tools/hq_data.py": "798c63d8f2394088e36988a91169bf666f14b90a3058be377f93f11f43c933f4",
+    "tools/hq_navigation.py": "4da66ff9db94610e90d9dc86f18752f5dfbfa492dd191e5c75bf433a05e80e61",
+    "tools/hq_smoke.py": "de5d8905e3cd3aa13b1bcd7c8adc6ca5f5b2f0548ed3f6a14c82be6ee102e549",
+    "tools/markdown-requirements.txt": "228054b54a2b8561b9edad1d13c46054ca5a94cfe6a5ba7e79efa9d67385b676",
+    "tools/requirements.txt": "356a201389c3174d4e3b74988dc000273a929b1a83334f34863968396b235525"
+  },
+  "native_checks": "passed",
+  "repository": "vixttha/LFVM",
+  "source_repository": "vixttha/README-HQ",
+  "source_sha": "43e29074099742a2c73741176286a44ccdf861a1",
+  "validation_run": "45922040553",
+  "version_status": "v0.0.6.140 held publication repair candidate; v0.0.6 family; no GitHub release"
+}
