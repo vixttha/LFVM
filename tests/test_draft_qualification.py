@@ -66,6 +66,11 @@ def package(path,data=None,mutate=None):
     workbook=root(M+"workbook");sheets=ET.SubElement(workbook,M+"sheets")
     workbook_rels=root(P+"Relationships")
     tables={t["sheet"]:t for t in SCHEMA["tables"]}
+    contents=copy.deepcopy(data or {})
+    contents["02_DICTIONARY"]=[row("02_DICTIONARY",field_id=name+"."+c["name"],table_name=name,column_name=c["name"],data_type=c["type"],required=c["required"],description=c["description"],foreign_key=t.get("foreign_keys",{}).get(c["name"])) for name,t in tables.items() for c in t["columns"]]
+    contents["03_TAXONOMY"]=[row("03_TAXONOMY",taxonomy_id=family+":"+code,family=family,code=code,display_label=code,definition="Synthetic definition",deprecated=False) for family,values in SCHEMA["enums"].items() for code in values]
+    contents["01_MANIFEST"]=[row("01_MANIFEST",partition_id=uid(1000+i),dataset_id=uid(999),schema_version=SCHEMA["template_version"],data_version=None if data is None else "v0.0.0.1",relative_path=path.name,table_name=name,record_count=len(tables) if name=="01_MANIFEST" else len(contents.get(name,[])),partition_state="active") for i,name in enumerate(tables)]
+    ET.SubElement(types,ct+"Override",PartName="/xl/workbook.xml",ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml")
     def add_cell(rr,i,n,v):
         if v is None:return
         c=ET.SubElement(rr,M+"c",r=col_name(i)+str(n))
@@ -80,12 +85,13 @@ def package(path,data=None,mutate=None):
         ET.SubElement(workbook_rels,P+"Relationship",Id=rid,Type=T+"worksheet",Target=f"worksheets/sheet{i}.xml")
         ws=root(M+"worksheet");sd=ET.SubElement(ws,M+"sheetData")
         put(sp,ws)
+        ET.SubElement(types,ct+"Override",PartName="/"+sp,ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml")
         if name=="00_README":
             add_cell(ET.SubElement(sd,M+"row",r="1"),1,1,"Synthetic fixture");continue
         headers=[c["name"] for c in tables[name]["columns"]]
         rr=ET.SubElement(sd,M+"row",r="1")
         for j,h in enumerate(headers,1):add_cell(rr,j,1,h)
-        content=(data or {}).get(name,[])
+        content=contents.get(name,[])
         for k,record in enumerate(content,2):
             rr=ET.SubElement(sd,M+"row",r=str(k))
             for j,h in enumerate(headers,1):add_cell(rr,j,k,record[h])
@@ -98,6 +104,7 @@ def package(path,data=None,mutate=None):
         tc=ET.SubElement(table,M+"tableColumns",count=str(len(headers)))
         for j,h in enumerate(headers,1):ET.SubElement(tc,M+"tableColumn",id=str(j),name=h)
         put(f"xl/tables/table{i}.xml",table)
+        ET.SubElement(types,ct+"Override",PartName=f"/xl/tables/table{i}.xml",ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.table+xml")
     put("xl/workbook.xml",workbook);put("xl/_rels/workbook.xml.rels",workbook_rels)
     if mutate:mutate(parts)
     with zipfile.ZipFile(path,"w",zipfile.ZIP_DEFLATED) as z:
@@ -109,7 +116,11 @@ class WorkbookTests(unittest.TestCase):
             p=Path(d)/"synthetic.xlsx";package(p,data,mutate)
             if good:return read_draft_xlsx(p,SCHEMA,blank=blank)
             with self.assertRaises(Invalid):read_draft_xlsx(p,SCHEMA,blank=blank)
-    def test_blank(self):self.assertEqual(sum(self.run_case(good=True)["table_rows"].values()),0)
+    def test_blank(self):
+        proof=self.run_case(good=True)
+        self.assertEqual(sum(proof["table_rows"][k] for k in proof["research"]),0)
+        self.assertEqual(proof["table_rows"]["02_DICTIONARY"],149)
+        self.assertEqual(proof["table_rows"]["01_MANIFEST"],11)
     def test_filled(self):self.assertEqual(self.run_case(data=fixture(),blank=False,good=True)["research"],fixture())
     def test_data_in_blank(self):self.run_case(data=fixture())
     def test_wrong_name(self):self.run_case(lambda p:p["xl/workbook.xml"].find(M+"sheets")[0].set("name","wrong"))
@@ -124,6 +135,23 @@ class WorkbookTests(unittest.TestCase):
         def mutate(p):
             rr=p["xl/worksheets/sheet5.xml"].find(".//"+M+"row");rr.append(copy.deepcopy(rr[0]))
         self.run_case(mutate)
+    def test_dictionary_mismatch(self):
+        self.run_case(lambda p:p["xl/worksheets/sheet3.xml"].find(M+"sheetData")[1].find(".//"+M+"t").__setattr__("text","wrong"))
+    def test_taxonomy_mismatch(self):
+        self.run_case(lambda p:p["xl/worksheets/sheet4.xml"].find(M+"sheetData")[1].find(".//"+M+"t").__setattr__("text","wrong"))
+    def test_manifest_count_mismatch(self):
+        def change(p):
+            rr=p["xl/worksheets/sheet2.xml"].find(M+"sheetData")[1]
+            next(c for c in rr if c.get("r")=="G2").find(M+"v").text="999"
+        self.run_case(change)
+    def test_root_relationship(self):
+        self.run_case(lambda p:p["_rels/.rels"][0].set("Type","urn:wrong"))
+    def test_content_type(self):
+        def change(p):
+            next(n for n in p["[Content_Types].xml"] if n.get("PartName")=="/xl/workbook.xml").set("ContentType","application/xml")
+        self.run_case(change)
+    def test_duplicate_table_identity(self):
+        self.run_case(lambda p:p["xl/tables/table5.xml"].set("displayName","Table4"))
     def test_merged(self):self.run_case(lambda p:ET.SubElement(p["xl/worksheets/sheet5.xml"],M+"mergeCells"))
 
 class RecoveryTests(unittest.TestCase):
