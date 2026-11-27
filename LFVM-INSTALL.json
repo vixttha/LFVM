@@ -1,0 +1,24 @@
+{
+  "attempt": "1",
+  "bootstrap_sha": "046972c6110bc869a964e94c98fe34b3a7ab399c",
+  "branch": "Veraphify",
+  "files_sha256": {
+    "AGENTS.md": "813dbc253edcb70d3135e3d533ce672f3085d726019f781baae2f8e2aa848103",
+    "LFVM-CONTEXT.md": "b319e0aa1c7e7862e5e80a51199b0fdb5b9edf9f8c50a6a49b16c182de83a829",
+    "LICENSE": "2b4290b4cff8f562faa9220256204a3ef37449061ce9d0b87c5166298633b555",
+    "README.md": "6c9030f719ca2b4c92592a25a11e9dfe77c9640f1521d0872025639ada321adc",
+    "archives/README.md": "957973e39c67e4d6245be37a2a86fdeb0f345e8760f605178bd58c6db1da95e5",
+    "docs/adopter-walkthrough.md": "32e403e04c3808f12fb4d6f782e5f705fc89919bacdf6679835b363a6ce16a43",
+    "docs/reuse.md": "7df997afa305c516f1aae3dcbb6b9c6c99c3e7a1540167418f7e1fdc855efe41",
+    "test-vault/LICENSE": "175dfc08f61924dd54523e2ccbd297cd544e565c4f6c32a4b1309ad67699d9cb",
+    "test-vault/handoff-profile.json": "e578871a565c2e61c678fed1010135d88aa1d036b800fcf2ff1159a2c6614017",
+    "test-vault/javascript/inspect-evidence.mjs": "fea2f33d9d1f8e4013960dc826bb87e68b4bfb17b9123e4b1cd9d4205feab30a",
+    "veraphifiy.mjs": "43e46c9a3f1cdddd7858947720a9cafe42d633244e381b05e27a330fc76d5445"
+  },
+  "native_checks": "passed",
+  "repository": "vixttha/LFVM",
+  "source_repository": "vixttha/Veraphify",
+  "source_sha": "add4a029312c958a5e126990fc49e802c0112c27",
+  "validation_run": "45922091751",
+  "version_status": "v0.0.9 integrated preview; no GitHub release; open PR #73 excluded"
+}
