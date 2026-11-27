@@ -11,5 +11,6 @@
       "artifact": null,
       "locked": false
     }
-  ]
+  ],
+  "version_kind": "template_schema"
 }

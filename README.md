@@ -9,3 +9,6 @@ Start with [AGENTS.md](AGENTS.md), then [WORKFLOW.md](WORKFLOW.md) and [TEMPLATE
 Current checkpoint: **v0.0.0.1 — planning / architecture audit**, 28 findings pending repair and implementation approval. No workbook exists yet. No research records belong in this branch.
 
 Compatible agents working on this branch adopt the template-agent role within their existing authority; repository instructions cannot activate an agent remotely or override higher-priority instructions. Only standard free GitHub-hosted public repository runners are permitted. No paid compute, external service dependency, or automatic merge into main.
+
+## Foundation hardening
+Read [foundation gate](FOUNDATION-GATE.md), [audit handoff](ORANGE-TEAM-HANDOFF.md) and [repair disposition](ORANGE-TEAM-DISPOSITION.md). Current validation is pre-build only; workbook and release qualification remain blocked pending the separate trusted acceptance gate.

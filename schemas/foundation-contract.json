@@ -1,0 +1,145 @@
+{
+  "contract_version": 1,
+  "mode": "prebuild_only",
+  "initial_version": "v0.0.0.1",
+  "version_grammar": "v(0|[1-9][0-9]*) repeated four numeric components",
+  "branches": {
+    "template_schema": {
+      "branch": "library-of-free-virtual-machines-spreadsheet-template",
+      "archive": "library of free virtual machines spreadsheet template version blanks",
+      "allowed_states": [
+        "planned",
+        "audit_pending"
+      ],
+      "planned_tests": 30,
+      "initial_audit_count": 28,
+      "version_key": "template_version"
+    },
+    "research_data": {
+      "branch": "library-of-free-virtual-machines-spreadsheet-library",
+      "archive": "library of free virtual machines spreadsheet version filled",
+      "allowed_states": [
+        "blocked_on_template"
+      ],
+      "planned_tests": 24,
+      "initial_source_count": 54,
+      "version_key": "data_version"
+    }
+  },
+  "taxonomy": {
+    "free_class": [
+      "F0",
+      "F1",
+      "F2",
+      "F3",
+      "F4",
+      "F5"
+    ],
+    "trust": [
+      "A",
+      "B",
+      "C",
+      "U"
+    ],
+    "access": [
+      "Public",
+      "Approval",
+      "Restricted",
+      "Closed",
+      "Unverified"
+    ],
+    "billing_risk": [
+      "R0",
+      "R1",
+      "R2",
+      "R3",
+      "R4",
+      "RU"
+    ],
+    "evidence": [
+      "E0",
+      "E1",
+      "E2",
+      "E3",
+      "E4",
+      "E5",
+      "E6"
+    ],
+    "compute": [
+      "Virtual machines",
+      "GPU computing",
+      "CPU computing",
+      "Cloud development",
+      "CI/CD runners",
+      "Containers",
+      "Serverless computing",
+      "Sponsored infrastructure"
+    ],
+    "secondary": [
+      "GPU notebooks",
+      "Research infrastructure",
+      "Shared shells",
+      "API-only services",
+      "Other"
+    ],
+    "value_state": [
+      "known",
+      "unknown",
+      "not_applicable",
+      "conflicting"
+    ],
+    "independent_dimensions": [
+      "environment",
+      "hardware",
+      "workload",
+      "execution",
+      "funding",
+      "eligibility",
+      "expiration",
+      "administration",
+      "network",
+      "architecture",
+      "availability",
+      "verification",
+      "commercial_use",
+      "region"
+    ]
+  },
+  "limits": {
+    "json_bytes": 262144,
+    "document_bytes": 1048576,
+    "artifact_bytes": 104857600,
+    "zip_members": 4096,
+    "zip_expanded_bytes": 268435456,
+    "zip_member_bytes": 33554432,
+    "zip_ratio": 200
+  },
+  "receipt_kinds": [
+    "foundation_metadata",
+    "scope_authorization",
+    "candidate_workbook_qualification",
+    "owner_acceptance",
+    "template_dependency",
+    "source_reconciliation"
+  ],
+  "release_gate": {
+    "enabled": false,
+    "reason": "No accepted workbook, independently trusted owner receipt source, or qualified release verifier exists. Contract v1 rejects any artifact, implementation, import, qualification or lock state.",
+    "requirements": [
+      "Trusted external owner scope and exact-candidate acceptance receipts; candidate cannot self-authorize",
+      "Immutable candidate commit and SHA-256 artifact/partition inventory; ancestry and historical accepted-byte protection",
+      "Exact public-runner suite/job evidence and distinct workbook qualification receipts",
+      "For filled: accepted template commit/path/digest/schema, actual source snapshot digest and per-source reconciliation, parity and migration tests",
+      "Evidence for security, privacy, billing, unknown values and source freshness; no silent data loss"
+    ]
+  },
+  "publication": {
+    "standard_public_runners_only": true,
+    "main_writes": false,
+    "macros": false,
+    "automatic_external_connections": false,
+    "secrets": false,
+    "actual_research_in_blank": false,
+    "real_workbook_creation_in_this_mission": false
+  }
+}

@@ -20,3 +20,6 @@ For every version, use the archive directory rules. Compare to the previous lock
 Evidence: exact commit SHA (record externally or in a later receipt to avoid a self-referential hash), workflow run/job URL, artifact path/digest, test counts, environment, reviewer, date and limitations. Never mark a gate complete based solely on a green unrelated run.
 
 Current setup validation is documentation-only; workbook tests remain pending until a candidate exists.
+
+## Current implementation boundary
+The state model above describes the intended future lifecycle. The executable [foundation gate](FOUNDATION-GATE.md) currently admits only pre-build states. A successor contract and verified release mechanism are necessary before advancing. Metadata CI is never workbook qualification or owner approval.
