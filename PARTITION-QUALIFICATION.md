@@ -1,0 +1,7 @@
+# Pre-production partition and portability remediation
+
+Mission LFVM-FOUNDATION-AUDIT-001. This change advances tasks 2, 3 and 5 without building the real spreadsheets. The original audit records are preserved.
+
+The partition reader uses a trusted externally pinned JSON index, checks the actual physical file inventory and bytes, enforces per-file 50 MiB and per-validation 128-workbook/1,000,000-row bounds, verifies each workbook's own manifest and combines research rows before resolving global foreign keys, claim identity and duplicate IDs. It rejects mixed dataset or edition, duplicate partition IDs, incorrect global/local counts and missing or extra files. Synthetic tests split providers and offers into separate workbooks, including dangling links and duplicate cases. Control metadata is repeated per workbook; the external inventory is authoritative and no workbook self-hash is required.
+
+The stricter portable reader rejects ambiguous cell payloads, oversized strings and nonportable numeric magnitudes. README text is screened. Current official-grade contradictions cannot be ignored merely because a particular field requires a higher supporting evidence grade. No real workbooks or actual records have been produced. A future streaming validator is necessary to exceed these conservative bounds. Excel UI expansion/formatting, actual provider evidence, and independently configured production trust still require qualification.

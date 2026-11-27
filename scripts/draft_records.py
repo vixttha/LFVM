@@ -22,7 +22,7 @@ def scalar(value, typ, enums):
     elif typ == "integer":
         require(type(value) is int, "invalid integer")
     elif typ == "number":
-        require(type(value) in (int,float) and math.isfinite(value), "invalid finite number")
+        require(type(value) in (int,float) and abs(value)<=1e15 and math.isfinite(value), "invalid or nonportable finite number")
     elif typ == "date":
         require(type(value) is str and re.fullmatch(r"\d{4}-\d\d-\d\d",value), "invalid date format")
         try: date.fromisoformat(value)
@@ -35,7 +35,7 @@ def scalar(value, typ, enums):
     elif typ == "currency":
         require(type(value) is str and re.fullmatch(r"[A-Z]{3}",value), "invalid currency syntax")
     elif typ == "text":
-        require(type(value) is str and bool(value.strip()), "invalid text")
+        require(type(value) is str and bool(value.strip()) and len(value.encode("utf-16-le",errors="surrogatepass"))<=65534 and not any(0xD800<=ord(c)<=0xDFFF or ord(c)<32 and c not in "\t\n\r" for c in value), "invalid or oversized text")
         public_text(value)
     else:
         raise Invalid("unsupported research type")
