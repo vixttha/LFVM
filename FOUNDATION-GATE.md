@@ -23,3 +23,6 @@ Producer hands off immutable accepted template commit/path/digest, schema/dictio
 ## Validation and trust
 
 Run the branch-specific validator with --ci in GitHub Actions and the synthetic tests under both Python modes. CI success is a **foundation_metadata** receipt only; do not treat it as workbook qualification or owner approval. Verify job logs and exact commit independently. No branch protection or paid runner is required. No separate independent team runtime has been launched; subsequent Red/Blue/Purple reviews must distinguish source inspection, executable tests and deferred release gates. This is a conservative restriction, not proof of bulletproof security. Future contract evolution must preserve compatible identifiers and data, with explicit migration and negative tests.
+
+## Independent-verifier support
+Read [QUALIFICATION-PROTOCOL.md](QUALIFICATION-PROTOCOL.md). Shared signed-receipt, history, dependency, source and partition verification primitives are available for synthetic tests. The active gate remains pre-build only; no trusted production keys or independent retrieval adapter have been configured.
