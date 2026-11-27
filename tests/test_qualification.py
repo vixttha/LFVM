@@ -53,7 +53,7 @@ class EvidenceTests(unittest.TestCase):
         with zipfile.ZipFile(folder/"synthetic.xlsx","w") as z:
             for name,content in test_foundation.PackageTests.PARTS.items():
                 z.writestr(name,content)
-        report=[{"test_id":f"TEST-{i:03d}","status":"pass","run_id":1,"job_id":2+i%2,"evidence_sha256":"c"*64} for i in range(1,CONFIG[kind][3]+1)]
+        report=[{"test_id":f"TEST-{i:03d}","status":"pass","run_id":1,"job_id":job,"evidence_sha256":"c"*64} for job in (2,3) for i in range(1,CONFIG[kind][3]+1)]
         def lookup(run,job):
             if run!=1 or job not in (2,3): return None
             return {"repository":REPO,"branch":CONFIG[kind][0],"commit_sha":commit,"event":"push","runner":"ubuntu-latest" if job==2 else "windows-latest","conclusion":"success","suite":SUITES[kind],"evidence_sha256":"c"*64,"test_ids":[r["test_id"] for r in report if r["job_id"]==job]}
@@ -135,6 +135,12 @@ class EvidenceTests(unittest.TestCase):
             a["run_lookup"]=lambda r,j:{**old(r,j),"commit_sha":"e"*40}
         self.rejection(change)
 
+    def test_incomplete_platform_coverage(self):
+        def change(a):
+            old=a["run_lookup"]
+            a["run_lookup"]=lambda r,j:({**old(r,j),"test_ids":old(r,j)["test_ids"][:-1]} if j==2 else old(r,j))
+        self.rejection(change)
+
     def test_missing_platform(self):
         def change(a):
             old=a["run_lookup"]
@@ -199,6 +205,10 @@ class DataBoundaryTests(unittest.TestCase):
         for value in ("http://example.org","https://localhost/x","https://127.0.0.1","https://10.0.0.1","https://app.notion.com/p/private","https://user:pass@example.org","https://example.org?api_key=secret"):
             with self.subTest(value=value),self.assertRaises(Invalid): public_url(value)
         self.assertTrue(public_url("https://example.org/pricing"))
+
+    def test_public_url_fragment_and_encoded_credential(self):
+        for value in ("https://example.org/#access_token=fixture","https://example.org:bad/","https://example.org/%0a","https://example.org/ghp%5f"+"a"*36):
+            with self.subTest(value=value),self.assertRaises(Invalid): public_url(value)
 
     def test_public_text(self):
         with self.assertRaises(Invalid): public_text("ghp_"+("a"*36))
@@ -270,6 +280,11 @@ class DataBoundaryTests(unittest.TestCase):
             p.write_bytes(canonical(values))
             rows[1]["sha256"]=digest(p.read_bytes())
             with self.assertRaises(Invalid): verify_partitions(root,rows,parser)
+
+    def test_partition_scalar_parser(self):
+        with tempfile.TemporaryDirectory() as t:
+            root=Path(t);p=root/"p.json";p.write_bytes(b"abc")
+            with self.assertRaises(Invalid): verify_partitions(root,[{"path":p.name,"sha256":digest(p.read_bytes()),"record_count":3}],lambda p:"abc")
 
     def test_partition_count(self):
         with tempfile.TemporaryDirectory() as t:

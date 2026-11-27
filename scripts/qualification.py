@@ -17,7 +17,7 @@ import re
 import subprocess
 import tempfile
 import unicodedata
-from urllib.parse import parse_qsl, urlsplit
+from urllib.parse import parse_qsl, unquote, urlsplit
 
 from foundation import (BASE, BASE_DOCS, CONFIG, Invalid, exact, flag, integer, keys,
                         portable_name, preflight_xlsx, regular, require,
@@ -146,9 +146,11 @@ def artifact_inventory(root):
     result = []
     pending = [(root, [])]
     entry_count = 0
+    total_bytes = 0
     while pending:
         current, prefix = pending.pop()
         children = list(islice(current.iterdir(),4097))
+        require(bool(children), "empty release inventory directory")
         entry_count += len(children)
         require(len(children) <= 4096 and entry_count <= 8192, "directory entry limit")
         require(len({p.name.casefold() for p in children}) == len(children), "case-colliding file names")
@@ -163,6 +165,8 @@ def artifact_inventory(root):
                 st = regular(p)
                 require(p.suffix.lower() in {".xlsx",".json",".csv",".md"}, "unapproved release artifact type")
                 require(p.suffix == p.suffix.lower(), "noncanonical artifact suffix")
+                total_bytes += st.st_size
+                require(total_bytes <= 1073741824, "total artifact size limit")
                 result.append({"path":rel,"sha256":streaming_sha256(p),"size_bytes":st.st_size})
                 require(len(result) <= 4096, "artifact count limit")
     require(sum(x["size_bytes"] for x in result) <= 1073741824, "total artifact size limit")
@@ -175,11 +179,12 @@ def validate_report(report, kind, commit, lookup):
     expected = {f"TEST-{n:03d}" for n in range(1, CONFIG[kind][3]+1)}
     seen = set()
     cached = {}
-    platforms = set()
+    platforms = {"ubuntu-latest", "windows-latest"}
+    require(len(report) == len(expected) * len(platforms), "each platform requires complete test evidence")
     for row in report:
         keys(row, ("test_id","status","run_id","job_id","evidence_sha256"), "test result")
         tid = row["test_id"]
-        require(type(tid) is str and tid in expected and tid not in seen, "unexpected or duplicate test ID")
+        require(type(tid) is str and tid in expected, "unexpected test ID")
         exact(row["status"], "pass", "test result")
         require(type(row["run_id"]) is int and row["run_id"] > 0 and type(row["job_id"]) is int and row["job_id"] > 0, "invalid run/job ID")
         hash_value(row["evidence_sha256"], "job evidence")
@@ -193,16 +198,16 @@ def validate_report(report, kind, commit, lookup):
         exact(trusted["branch"], CONFIG[kind][0], "runner branch")
         exact(trusted["commit_sha"], commit, "runner commit")
         exact(trusted["event"], "push", "runner event")
-        require(trusted["runner"] in {"ubuntu-latest","windows-latest"}, "standard public runner required")
-        platforms.add(trusted["runner"])
+        runner = trusted["runner"]
+        require(type(runner) is str and runner in platforms, "standard public runner required")
+        require((runner, tid) not in seen, "duplicate test evidence on platform")
         exact(trusted["conclusion"], "success", "runner conclusion")
         exact(trusted["suite"], SUITES[kind], "workbook qualification suite")
         exact(trusted["evidence_sha256"], row["evidence_sha256"], "runner log digest")
         require(type(trusted["test_ids"]) is list and tid in trusted["test_ids"], "test not evidenced in runner log")
-        seen.add(tid)
-    require(seen == expected, "incomplete acceptance test inventory")
-    require(platforms == {"ubuntu-latest","windows-latest"}, "both public runner platforms require evidence")
-    return object_digest(sorted(report,key=lambda r:r["test_id"]))
+        seen.add((runner, tid))
+    require(seen == {(platform, tid) for platform in platforms for tid in expected}, "incomplete acceptance test inventory on one or more platforms")
+    return object_digest(sorted(report,key=lambda r:(r["test_id"], r["run_id"], r["job_id"])))
 
 
 @dataclass(frozen=True)
@@ -282,6 +287,13 @@ def verify_history(archive_root, accepted, candidate_context):
     for entry in accepted:
         require(type(entry) is AcceptedRelease, "unverified historical acceptance")
         exact(entry.kind,candidate_context["version_kind"],"history namespace")
+        exact(entry.branch,CONFIG[entry.kind][0],"history branch")
+        version(entry.version)
+        commit_value(entry.commit_sha)
+        hash_value(entry.acceptance_sha256,"historical acceptance")
+        hash_value(entry.schema_sha256,"historical schema")
+        if last is None:
+            exact(entry.version,BASE,"initial historical version")
         require(entry.version not in seen, "duplicate historical version")
         seen.add(entry.version)
         require(last is None or numeric_version(entry.version) > numeric_version(last), "non-increasing version history")
@@ -326,8 +338,12 @@ SENSITIVE_QUERY = re.compile(r"(?:token|secret|password|credential|signature|api
 
 def public_url(value):
     require(type(value) is str and len(value) <= 4096 and not any(ord(c)<32 for c in value), "invalid URL")
-    u = urlsplit(value)
-    require(u.scheme == "https" and u.hostname and u.username is None and u.password is None and u.port in (None,443) and "\\" not in value and not any(c.isspace() for c in value), "public HTTPS URL required")
+    try:
+        u = urlsplit(value)
+        port = u.port
+    except ValueError as exc:
+        raise Invalid("invalid public URL") from exc
+    require(u.scheme == "https" and u.hostname and u.username is None and u.password is None and port in (None,443) and "\\" not in value and not any(c.isspace() for c in value), "public HTTPS URL required")
     host = u.hostname.rstrip(".").lower()
     require(host not in {"localhost","notion.so","www.notion.so","app.notion.com"} and not host.endswith((".local",".internal",".localhost",".notion.so")), "private/workspace URL")
     try:
@@ -336,7 +352,10 @@ def public_url(value):
         require("." in host and bool(re.fullmatch(r"[a-z0-9.-]+", host)) and bool(re.fullmatch(r"[a-z][a-z0-9-]*",host.rsplit(".",1)[-1])), "nonpublic or ambiguous hostname")
     else:
         require(addr.is_global, "nonpublic IP address")
+    decoded = unquote(value)
+    require(SECRET.search(decoded) is None and not any(ord(c) < 32 for c in decoded), "sensitive or unsafe URL content")
     require(not any(SENSITIVE_QUERY.search(k) for k,_ in parse_qsl(u.query,keep_blank_values=True)), "sensitive URL parameter")
+    require(not SENSITIVE_QUERY.search(unquote(u.fragment)), "sensitive URL fragment")
     return True
 
 
@@ -409,7 +428,7 @@ def reconcile_sources(snapshot_bytes, expected_digest, ledger, known_offer_ids, 
 
 def verify_partitions(root, partitions, read_record_ids):
     """read_record_ids is a trusted approved-schema parser, not manifest assertions."""
-    require(type(partitions) is list and bool(partitions), "partition inventory required")
+    require(type(partitions) is list and 0 < len(partitions) <= 4096, "partition inventory count limit")
     seen_paths,seen_ids = set(),set()
     for part in partitions:
         keys(part,("path","sha256","record_count"),"partition")
@@ -421,7 +440,9 @@ def verify_partitions(root, partitions, read_record_ids):
         require(hash_value(part["sha256"],"partition digest") == streaming_sha256(file),"partition digest mismatch")
         count = part["record_count"]
         require(type(count) is int and 0 <= count <= 1048575, "partition row limit")
-        ids = list(islice(iter(read_record_ids(file)),count+1))
+        records = read_record_ids(file)
+        require(not isinstance(records, (str, bytes, dict)), "partition parser must return record IDs, not scalar or mapping")
+        ids = list(islice(iter(records),count+1))
         integer(count,len(ids),"partition record count")
         for rid in ids:
             record_id(rid)

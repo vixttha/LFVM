@@ -3,6 +3,9 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
+from itertools import islice
+import unicodedata
 import os
 from pathlib import Path
 import re
@@ -60,6 +63,7 @@ def exact(value, expected, where):
 def portable_name(name):
     require(type(name) is str and 0 < len(name) <= 240, "invalid path component")
     require(name not in {".", ".."} and not name.endswith((" ", ".")), "unsafe path component")
+    require(name == unicodedata.normalize("NFC", name) and not any(unicodedata.category(c).startswith("C") for c in name), "noncanonical or unsafe Unicode path")
     require(not any(ord(c) < 32 or c in '<>:"/\\|?*' for c in name), "unsafe path character")
     require(name.split(".")[0].upper() not in {"CON", "PRN", "AUX", "NUL", *(f"COM{i}" for i in range(1,10)), *(f"LPT{i}" for i in range(1,10))}, "reserved path component")
 
@@ -75,7 +79,8 @@ def regular(path, directory=False):
 
 def inventory(path, expected):
     regular(path, True)
-    entries = list(path.iterdir())
+    entries = list(islice(path.iterdir(), len(expected) + 1))
+    require(len(entries) == len(expected), f"{path.name}: unexpected archive entry count")
     names = [p.name for p in entries]
     for p in entries:
         portable_name(p.name)
@@ -111,9 +116,34 @@ def bad_constant(_):
     raise Invalid("non-finite JSON number")
 
 
+def finite_float(raw):
+    value = float(raw)
+    require(math.isfinite(value), "non-finite JSON number")
+    return value
+
+
+def check_json_tree(value, depth=0):
+    require(depth <= 32, "JSON nesting limit")
+    if type(value) is str:
+        require(not any(0xD800 <= ord(c) <= 0xDFFF for c in value), "invalid Unicode surrogate")
+    elif type(value) is list:
+        for item in value:
+            check_json_tree(item, depth + 1)
+    elif type(value) is dict:
+        for key, item in value.items():
+            check_json_tree(key, depth + 1)
+            check_json_tree(item, depth + 1)
+
+
 def strict_json(data):
     require(type(data) is bytes and len(data) <= JSON_LIMIT, "JSON size limit")
-    return json.loads(data.decode("utf-8"), object_pairs_hook=unique_pairs, parse_constant=bad_constant)
+    try:
+        value = json.loads(data.decode("utf-8"), object_pairs_hook=unique_pairs,
+                           parse_constant=bad_constant, parse_float=finite_float)
+    except (UnicodeError, RecursionError, ValueError) as exc:
+        raise Invalid("invalid JSON input") from exc
+    check_json_tree(value)
+    return value
 
 
 def load(path):
@@ -153,6 +183,21 @@ def validate_contract(root):
         integer(row["planned_tests"], planned, "planned tests")
         require(type(row["allowed_states"]) is list and set(row["allowed_states"]) == states and len(row["allowed_states"]) == len(states), "state contract mismatch")
         integer(row["initial_audit_count"], 28, "audit count") if kind == "template_schema" else integer(row["initial_source_count"], 54, "source count")
+    # The complete v1 contract is fixed; changes require an explicit protocol revision.
+    expected = strict_json(r'''{"contract_version":1,"mode":"prebuild_only","initial_version":"v0.0.0.1","version_grammar":"v(0|[1-9][0-9]*) repeated four numeric components","branches":{"template_schema":{"branch":"library-of-free-virtual-machines-spreadsheet-template","archive":"library of free virtual machines spreadsheet template version blanks","allowed_states":["planned","audit_pending"],"planned_tests":30,"initial_audit_count":28,"version_key":"template_version"},"research_data":{"branch":"library-of-free-virtual-machines-spreadsheet-library","archive":"library of free virtual machines spreadsheet version filled","allowed_states":["blocked_on_template"],"planned_tests":24,"initial_source_count":54,"version_key":"data_version"}},"taxonomy":{"free_class":["F0","F1","F2","F3","F4","F5"],"trust":["A","B","C","U"],"access":["Public","Approval","Restricted","Closed","Unverified"],"billing_risk":["R0","R1","R2","R3","R4","RU"],"evidence":["E0","E1","E2","E3","E4","E5","E6"],"compute":["Virtual machines","GPU computing","CPU computing","Cloud development","CI/CD runners","Containers","Serverless computing","Sponsored infrastructure"],"secondary":["GPU notebooks","Research infrastructure","Shared shells","API-only services","Other"],"value_state":["known","unknown","not_applicable","conflicting"],"independent_dimensions":["environment","hardware","workload","execution","funding","eligibility","expiration","administration","network","architecture","availability","verification","commercial_use","region"]},"limits":{"json_bytes":262144,"document_bytes":1048576,"artifact_bytes":104857600,"zip_members":4096,"zip_expanded_bytes":268435456,"zip_member_bytes":33554432,"zip_ratio":200},"receipt_kinds":["foundation_metadata","scope_authorization","candidate_workbook_qualification","owner_acceptance","template_dependency","source_reconciliation"],"release_gate":{"enabled":false,"reason":"No accepted workbook, independently configured production approval trust roots, or integrated independent production retrieval/runner-evidence adapter exists. Contract v1 rejects any artifact, implementation, import, qualification or lock state.","requirements":["Trusted external owner scope and exact-candidate acceptance receipts; candidate cannot self-authorize","Immutable candidate commit and SHA-256 artifact/partition inventory; ancestry and historical accepted-byte protection","Exact public-runner suite/job evidence and distinct workbook qualification receipts","For filled: accepted template commit/path/digest/schema, actual source snapshot digest and per-source reconciliation, parity and migration tests","Evidence for security, privacy, billing, unknown values and source freshness; no silent data loss"]},"publication":{"standard_public_runners_only":true,"main_writes":false,"macros":false,"automatic_external_connections":false,"secrets":false,"actual_research_in_blank":false,"real_workbook_creation_in_this_mission":false}}'''.encode("utf-8"))
+    def same_contract(actual, reference):
+        require(type(actual) is type(reference), "contract value type mismatch")
+        if type(reference) is dict:
+            keys(actual, reference, "contract section")
+            for key in reference:
+                same_contract(actual[key], reference[key])
+        elif type(reference) is list:
+            require(len(actual) == len(reference), "contract list length mismatch")
+            for a, b in zip(actual, reference):
+                same_contract(a, b)
+        else:
+            exact(actual, reference, "contract v1 value")
+    same_contract(c, expected)
     flag(c["release_gate"]["enabled"], False, "release gate")
     for k in ("free_class", "trust", "access", "billing_risk", "evidence", "compute", "secondary", "value_state", "independent_dimensions"):
         values = c["taxonomy"][k]
@@ -269,6 +314,7 @@ def preflight_xlsx(path):
         names = set()
         total = 0
         xml = {}
+        relationships = []
         for i in infos:
             name = i.filename
             require(not i.is_dir() and not name.startswith("/") and "\\" not in name, "unsafe ZIP name")
@@ -283,7 +329,7 @@ def preflight_xlsx(path):
             total += i.file_size
             require(total <= 268435456, "ZIP expansion limit")
             low = name.casefold()
-            require(low.endswith((".xml",".rels")) and not any(x in low for x in ("vbaproject","activex","embeddings/","externallinks/","customui/","connections.xml","querytables/")), "unsupported or active package part")
+            require(low.endswith((".xml",".rels")) and not any(x in low for x in ("vbaproject","activex","embeddings/","externallinks/","customui/","connections.xml","querytables/","macrosheets/","dialogsheets/","webextensions/")), "unsupported or active package part")
             with z.open(i) as f:
                 data = f.read(33554433)
             require(len(data) == i.file_size and len(data) <= 33554432, "ZIP member length")
@@ -291,7 +337,16 @@ def preflight_xlsx(path):
             require("\x00" not in content and "<!DOCTYPE" not in content.upper() and "<!ENTITY" not in content.upper(), "unsafe XML declaration")
             el = ET.fromstring(content)
             if low.endswith(".rels"):
+                rel_ns = "{http://schemas.openxmlformats.org/package/2006/relationships}"
+                require(el.tag == rel_ns + "Relationships", "invalid relationship root")
+                relationship_ids = set()
                 for rel in el:
+                    require(rel.tag == rel_ns + "Relationship", "invalid relationship element")
+                    rid = rel.attrib.get("Id")
+                    rtype = rel.attrib.get("Type", "")
+                    require(bool(rid) and rid not in relationship_ids and bool(rtype), "missing or duplicate relationship identity")
+                    relationship_ids.add(rid)
+                    require(not any(x in rtype.casefold() for x in ("macro","activex","oleobject","externallink","attachedtemplate","webextension")), "active relationship type")
                     require(rel.attrib.get("TargetMode","Internal") == "Internal", "external relationship")
                     target = rel.attrib.get("Target","")
                     require(target and not any(c in target for c in (":","\\","%","?","#")), "unsafe relationship target")
@@ -305,12 +360,17 @@ def preflight_xlsx(path):
                             portable_name(component)
                             stack.append(component)
                     require(bool(stack), "empty relationship target")
+                    relationships.append("/".join(stack))
             if name == "[Content_Types].xml":
+                ct_ns = "{http://schemas.openxmlformats.org/package/2006/content-types}"
+                require(el.tag == ct_ns + "Types", "invalid content-types root")
                 for ct in el:
+                    require(ct.tag in {ct_ns + "Default", ct_ns + "Override"}, "invalid content-type element")
                     value = ct.attrib.get("ContentType","").lower()
                     require(value and not any(x in value for x in ("macroenabled","vba","activex","oleobject","externalLink".lower())), "active content type")
             xml[name] = el
         require({"[Content_Types].xml","_rels/.rels","xl/workbook.xml"} <= set(xml), "required OOXML parts absent")
+        require(all(target in xml for target in relationships), "relationship target absent from package")
         require(xml["xl/workbook.xml"].tag == "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}workbook", "invalid workbook root")
     return digest
 
