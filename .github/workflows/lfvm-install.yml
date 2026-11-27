@@ -78,7 +78,7 @@ jobs:
               copy("starter/test-vault","test-vault")
               write("test-vault/cases.md","# LFVM planned verification cases\n\nThese are declarations, not proof of execution or workbook acceptance.\n\n| Case | Area | Priority | Suggested implementation | Expected outcome |\n|---|---|---|---|---|\n| LFVM-001 | Foundation | P0 | Existing template and library regression suites | Both independent pre-build gates remain intact |\n| LFVM-002 | Template | P0 | Exact artifact and SHA-256 check | Accepted blank workbook required before data population |\n| LFVM-003 | Library | P0 | Schema and evidence checks | Offers have traceable evidence and valid taxonomy |\n| LFVM-004 | Safety | P0 | Negative fixtures | Reject untrusted input and private data |\n| LFVM-005 | History | P0 | Version archive checks | Locked versions and source pins remain immutable |\n")
           elif branch=="Veraphify":
-              for p in ["veraphifiy.mjs","LICENSE","docs/reuse.md","docs/adopter-walkthrough.md"]: copy(p)
+              for p in ["veraphifiy.mjs","LICENSE","docs/reuse.md","docs/adopter-walkthrough.md","test-vault/LICENSE","test-vault/javascript/inspect-evidence.mjs","test-vault/handoff-profile.json"]: copy(p)
               (out/"archives").mkdir()
               write("archives/README.md","# LFVM archive\n\nNo accepted LFVM feature archive exists yet. Import only exact LFVM revisions with genuine receipts, verified digests and owner scope. No upstream archives or sample fixture outputs are stored here.\n")
               write("README.md","# LFVM Veraphify\n\nUse the pinned CLI: node veraphifiy.mjs --help. Import, verify and lookup require a real LFVM source/evidence pair. See [walkthrough](docs/adopter-walkthrough.md), [reuse](docs/reuse.md), [archive](archives/README.md), and [provenance](LFVM-CONTEXT.md). The walkthrough uses disposable synthetic fixtures, not LFVM records.\n")
@@ -109,7 +109,11 @@ jobs:
         run: |
           set -euo pipefail
           cd "$RUNNER_TEMP/package"
-          node --check veraphifiy.mjs && node veraphifiy.mjs --help && if node veraphifiy.mjs verify --archive "$RUNNER_TEMP/absent-archive" --project vixttha/LFVM --version v0.0.0.1; then exit 1; fi
+          node --check veraphifiy.mjs
+          node veraphifiy.mjs --help
+          node veraphifiy.mjs --version | grep -Fx v0.0.9
+          if node veraphifiy.mjs verify --archive "$RUNNER_TEMP/absent-archive" --project vixttha/LFVM --version v0.0.0.1 2>"$RUNNER_TEMP/veraphify-negative.log"; then exit 1; fi
+          grep -F "Project version is not archived" "$RUNNER_TEMP/veraphify-negative.log"
       - name: Seal validated package
         shell: bash
         run: |
