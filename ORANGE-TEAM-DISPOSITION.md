@@ -17,3 +17,7 @@ Mission LFVM-FOUNDATION-AUDIT-001. All 45 original IDs remain traceable in ORANG
 | A43 | Open separate workstream | 28 blank architecture findings and seven filled readiness findings preserved. |
 
 The categories overlap when an issue has both current containment and a future gate (A15). No full-release readiness claim. Verify test results against the exact new head; use only standard free public GitHub runners. If status/log retrieval is unavailable, retain pending rather than mark passing.
+
+## First runner results and corrective candidate
+
+The first candidate passed 54 synthetic tests in each Python mode on Ubuntu in both branches. Windows failed the immutable-handoff check before running the tests because checkout converted line endings (runs 45921006671 and 45921008227). Repair compares the immutable Git blobs and permits only the canonical checkout line-ending transformation; adds three regression tests and explicit LF attributes for repository text. Checkout is pinned to upstream v7.0.1 (verified tag 3d3c42e5aac5ba805825da76410c181273ba90b1; Node 24) to address the runner's deprecated-runtime warning. Corrective exact-head results are pending. Preserve the original failed evidence.

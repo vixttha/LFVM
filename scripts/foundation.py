@@ -333,12 +333,19 @@ def verify_event(env, kind, actual_sha):
         raise Invalid("unsupported CI event")
 
 
+def verify_handoff_bytes(original, committed, checkout):
+    """Compare immutable Git blobs; tolerate only Git's canonical CRLF checkout transform."""
+    require(original == committed, "original handoff Git blob altered")
+    require(checkout == committed or (b"\r" not in committed and checkout == committed.replace(b"\n", b"\r\n")), "handoff working tree altered")
+
+
 def verify_ci(root, kind):
     head = git(root, "rev-parse", "HEAD").decode("ascii").strip()
     verify_event(os.environ, kind, head)
     git(root, "merge-base", "--is-ancestor", ANCHORS[kind], head)
     original = git(root, "show", ANCHORS[kind]+":ORANGE-TEAM-HANDOFF.md")
-    require(read_bytes(root/"ORANGE-TEAM-HANDOFF.md", DOC_LIMIT) == original, "original handoff altered")
+    committed = git(root, "show", head+":ORANGE-TEAM-HANDOFF.md")
+    verify_handoff_bytes(original, committed, read_bytes(root/"ORANGE-TEAM-HANDOFF.md", DOC_LIMIT))
     entries = git(root, "ls-files", "-z", "--stage").decode("utf-8").split("\x00")
     paths = set()
     for row in filter(None, entries):
