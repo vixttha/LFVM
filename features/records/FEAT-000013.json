@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "id": "FEAT-000013",
+  "title": "Security and privacy assessment",
+  "summary": "Track independent security, privacy and sensitivity suitability findings.",
+  "kind": "capability",
+  "lifecycle_status": "proposed",
+  "implementation_status": "not_planned",
+  "idea_ids": [
+    "IDEA-000016",
+    "IDEA-000004"
+  ],
+  "acceptance_criteria": [
+    "Display independent assessments, sources and unknowns",
+    "no composite safety guarantee."
+  ],
+  "testing": {
+    "status": "untested"
+  },
+  "evidence": [
+    {
+      "kind": "other",
+      "claim": "Existing LFVM design or gate context only; not proof of delivered feature or accepted workbook.",
+      "source_sha": "fa8c4fd2a8ad2da36ee60797b0d314494b7180e2",
+      "source_path": "LIBRARY-LAWS.md",
+      "receipt": "https://github.com/vixttha/LFVM/blob/fa8c4fd2a8ad2da36ee60797b0d314494b7180e2/LIBRARY-LAWS.md"
+    }
+  ],
+  "release_membership": "NOT_ASSERTED"
+}

@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "id": "IDEA-000015",
+  "title": "Provider-neutral machine-readable data access",
+  "summary": "Publish versioned, validated machine-readable views derived from accepted library data.",
+  "kind": "architecture",
+  "origin": {
+    "created_by": "joint",
+    "source": "LFVM product vision and owner-approved catalog capture, 2026-11-26; implementation not authorized"
+  },
+  "lifecycle_status": "captured",
+  "implementation_status": "not_planned",
+  "testing": {
+    "status": "untested"
+  },
+  "importance": "high",
+  "complexity": "high",
+  "categories": [
+    "delivery"
+  ],
+  "benefits": [
+    "Enables independent tools and web consumers"
+  ],
+  "risks": [
+    "Derived data can drift from canonical releases"
+  ],
+  "related_ideas": [
+    "IDEA-000001",
+    "IDEA-000003"
+  ],
+  "evidence": [
+    {
+      "relation": "context",
+      "claim": "Pinned project design or policy context; not implementation or release proof.",
+      "repository": "vixttha/LFVM",
+      "commit": "56c1f378fd0d891426365875fcea242ba5592c2f",
+      "path": "WORKBOOK-DESIGN-REPAIR.md"
+    }
+  ]
+}

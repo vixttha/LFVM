@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "id": "FEAT-000009",
+  "title": "Claim-level source evidence",
+  "summary": "Attach dated field-specific evidence to material claims.",
+  "kind": "capability",
+  "lifecycle_status": "proposed",
+  "implementation_status": "not_planned",
+  "idea_ids": [
+    "IDEA-000004",
+    "IDEA-000005"
+  ],
+  "acceptance_criteria": [
+    "Known material fields have matching current evidence",
+    "contradictory claims remain visible."
+  ],
+  "testing": {
+    "status": "untested"
+  },
+  "evidence": [
+    {
+      "kind": "other",
+      "claim": "Existing LFVM design or gate context only; not proof of delivered feature or accepted workbook.",
+      "source_sha": "56c1f378fd0d891426365875fcea242ba5592c2f",
+      "source_path": "DRAFT-QUALIFICATION-REPAIR.md",
+      "receipt": "https://github.com/vixttha/LFVM/blob/56c1f378fd0d891426365875fcea242ba5592c2f/DRAFT-QUALIFICATION-REPAIR.md"
+    }
+  ],
+  "release_membership": "NOT_ASSERTED"
+}

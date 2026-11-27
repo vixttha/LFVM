@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "id": "FEAT-000011",
+  "title": "Zero-cost verification",
+  "summary": "Qualify zero cost only for an evidenced, bounded scenario.",
+  "kind": "capability",
+  "lifecycle_status": "proposed",
+  "implementation_status": "not_planned",
+  "idea_ids": [
+    "IDEA-000005",
+    "IDEA-000004"
+  ],
+  "acceptance_criteria": [
+    "Require applicable E6 evidence, known mandatory fees and no automatic paid conversion."
+  ],
+  "testing": {
+    "status": "untested"
+  },
+  "evidence": [
+    {
+      "kind": "other",
+      "claim": "Existing LFVM design or gate context only; not proof of delivered feature or accepted workbook.",
+      "source_sha": "fa8c4fd2a8ad2da36ee60797b0d314494b7180e2",
+      "source_path": "LIBRARY-LAWS.md",
+      "receipt": "https://github.com/vixttha/LFVM/blob/fa8c4fd2a8ad2da36ee60797b0d314494b7180e2/LIBRARY-LAWS.md"
+    }
+  ],
+  "release_membership": "NOT_ASSERTED"
+}

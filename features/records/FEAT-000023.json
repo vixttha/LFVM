@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "id": "FEAT-000023",
+  "title": "Resource benchmark catalog",
+  "summary": "Store reproducible benchmark measurements and test conditions.",
+  "kind": "capability",
+  "lifecycle_status": "proposed",
+  "implementation_status": "not_planned",
+  "idea_ids": [
+    "IDEA-000013"
+  ],
+  "acceptance_criteria": [
+    "Each published benchmark identifies workload, profile, units, source and limitations."
+  ],
+  "testing": {
+    "status": "untested"
+  },
+  "evidence": [
+    {
+      "kind": "other",
+      "claim": "Existing LFVM design or gate context only; not proof of delivered feature or accepted workbook.",
+      "source_sha": "56c1f378fd0d891426365875fcea242ba5592c2f",
+      "source_path": "schemas/workbook-draft-v1.json",
+      "receipt": "https://github.com/vixttha/LFVM/blob/56c1f378fd0d891426365875fcea242ba5592c2f/schemas/workbook-draft-v1.json"
+    }
+  ],
+  "release_membership": "NOT_ASSERTED"
+}

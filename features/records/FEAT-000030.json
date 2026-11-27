@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "id": "FEAT-000030",
+  "title": "Interactive research analytics",
+  "summary": "Provide transparent derived statistics and trends for accepted public records.",
+  "kind": "capability",
+  "lifecycle_status": "proposed",
+  "implementation_status": "not_planned",
+  "idea_ids": [
+    "IDEA-000011",
+    "IDEA-000003"
+  ],
+  "acceptance_criteria": [
+    "Counts distinguish organizations, services and offers and display data revision."
+  ],
+  "testing": {
+    "status": "untested"
+  },
+  "evidence": [],
+  "release_membership": "NOT_ASSERTED"
+}

@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "id": "IDEA-000008",
+  "title": "Workload-to-resource matching",
+  "summary": "Match workloads to resource profiles, supported software, access and terms without merging incompatible configurations.",
+  "kind": "feature",
+  "origin": {
+    "created_by": "joint",
+    "source": "LFVM product vision and owner-approved catalog capture, 2026-11-26; implementation not authorized"
+  },
+  "lifecycle_status": "captured",
+  "implementation_status": "not_planned",
+  "testing": {
+    "status": "untested"
+  },
+  "importance": "high",
+  "complexity": "high",
+  "categories": [
+    "compatibility"
+  ],
+  "benefits": [
+    "Makes resource selection actionable"
+  ],
+  "risks": [
+    "Theoretical compatibility can be mistaken for tested support"
+  ],
+  "related_ideas": [
+    "IDEA-000002",
+    "IDEA-000013"
+  ],
+  "evidence": [
+    {
+      "relation": "context",
+      "claim": "Pinned project design or policy context; not implementation or release proof.",
+      "repository": "vixttha/LFVM",
+      "commit": "56c1f378fd0d891426365875fcea242ba5592c2f",
+      "path": "WORKBOOK-DESIGN-REPAIR.md"
+    }
+  ]
+}

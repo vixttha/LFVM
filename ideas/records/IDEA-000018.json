@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "id": "IDEA-000018",
+  "title": "Optional authorized provider usage integrations",
+  "summary": "Explore consent-based read-only usage integrations when providers offer supported interfaces, with manual fallback.",
+  "kind": "feature",
+  "origin": {
+    "created_by": "joint",
+    "source": "LFVM product vision and owner-approved catalog capture, 2026-11-26; implementation not authorized"
+  },
+  "lifecycle_status": "captured",
+  "implementation_status": "not_planned",
+  "testing": {
+    "status": "untested"
+  },
+  "importance": "high",
+  "complexity": "very_high",
+  "categories": [
+    "integrations"
+  ],
+  "benefits": [
+    "Reduces manual tracking work"
+  ],
+  "risks": [
+    "Credentials, permissions and API terms require review"
+  ],
+  "related_ideas": [
+    "IDEA-000007",
+    "IDEA-000016"
+  ],
+  "evidence": []
+}

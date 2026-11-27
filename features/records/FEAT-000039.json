@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "id": "FEAT-000039",
+  "title": "Community discovery submission and review",
+  "summary": "Accept optional public-safe discovery submissions for review.",
+  "kind": "workflow",
+  "lifecycle_status": "proposed",
+  "implementation_status": "not_planned",
+  "idea_ids": [
+    "IDEA-000012",
+    "IDEA-000004"
+  ],
+  "acceptance_criteria": [
+    "Reject duplicates, unsafe inputs and unreviewed canonical updates."
+  ],
+  "testing": {
+    "status": "untested"
+  },
+  "evidence": [],
+  "release_membership": "NOT_ASSERTED"
+}

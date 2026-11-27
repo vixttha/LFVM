@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "id": "FEAT-000031",
+  "title": "Workload-based resource recommendations",
+  "summary": "Recommend matching offers with explanations and suitable alternatives.",
+  "kind": "capability",
+  "lifecycle_status": "proposed",
+  "implementation_status": "not_planned",
+  "idea_ids": [
+    "IDEA-000009",
+    "IDEA-000008",
+    "IDEA-000014",
+    "IDEA-000017"
+  ],
+  "acceptance_criteria": [
+    "Honor workload constraints, eligibility, known fees and evidence limitations."
+  ],
+  "testing": {
+    "status": "untested"
+  },
+  "evidence": [],
+  "release_membership": "NOT_ASSERTED"
+}

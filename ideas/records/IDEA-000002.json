@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "id": "IDEA-000002",
+  "title": "Universal free computing resource directory",
+  "summary": "Catalog free computing environments and distinguish infrastructure, credits, trials, API-only services and eligibility restrictions.",
+  "kind": "product",
+  "origin": {
+    "created_by": "joint",
+    "source": "LFVM product vision and owner-approved catalog capture, 2026-11-26; implementation not authorized"
+  },
+  "lifecycle_status": "captured",
+  "implementation_status": "not_planned",
+  "testing": {
+    "status": "untested"
+  },
+  "importance": "critical",
+  "complexity": "high",
+  "categories": [
+    "discovery"
+  ],
+  "benefits": [
+    "Makes heterogeneous free resources discoverable"
+  ],
+  "risks": [
+    "Advertised free offers may be restricted or expired"
+  ],
+  "related_ideas": [
+    "IDEA-000001",
+    "IDEA-000004",
+    "IDEA-000005"
+  ],
+  "evidence": [
+    {
+      "relation": "context",
+      "claim": "Pinned project design or policy context; not implementation or release proof.",
+      "repository": "vixttha/LFVM",
+      "commit": "fa8c4fd2a8ad2da36ee60797b0d314494b7180e2",
+      "path": "LIBRARY-LAWS.md"
+    }
+  ]
+}

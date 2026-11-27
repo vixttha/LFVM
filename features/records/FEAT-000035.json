@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "id": "FEAT-000035",
+  "title": "Free-resource consumption dashboard",
+  "summary": "Show usage and remaining allowances per compatible unit and period.",
+  "kind": "capability",
+  "lifecycle_status": "proposed",
+  "implementation_status": "not_planned",
+  "idea_ids": [
+    "IDEA-000007",
+    "IDEA-000006"
+  ],
+  "acceptance_criteria": [
+    "Do not sum incompatible units",
+    "clearly separate reported and estimated consumption."
+  ],
+  "testing": {
+    "status": "untested"
+  },
+  "evidence": [],
+  "release_membership": "NOT_ASSERTED"
+}

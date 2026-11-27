@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "id": "FEAT-000025",
+  "title": "Public read-only data API or static data endpoint",
+  "summary": "Serve a versioned public data view without modifying the spreadsheet.",
+  "kind": "integration",
+  "lifecycle_status": "proposed",
+  "implementation_status": "not_planned",
+  "idea_ids": [
+    "IDEA-000003",
+    "IDEA-000015"
+  ],
+  "acceptance_criteria": [
+    "Clients can retrieve an accepted data revision with schema version and source provenance."
+  ],
+  "testing": {
+    "status": "untested"
+  },
+  "evidence": [],
+  "release_membership": "NOT_ASSERTED"
+}

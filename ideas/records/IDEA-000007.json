@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "id": "IDEA-000007",
+  "title": "Personal free-resource consumption dashboard",
+  "summary": "Track user-supplied or authorized account usage and remaining allowances privately, separately from public offers.",
+  "kind": "product",
+  "origin": {
+    "created_by": "joint",
+    "source": "LFVM product vision and owner-approved catalog capture, 2026-11-26; implementation not authorized"
+  },
+  "lifecycle_status": "captured",
+  "implementation_status": "not_planned",
+  "testing": {
+    "status": "untested"
+  },
+  "importance": "critical",
+  "complexity": "high",
+  "categories": [
+    "usage"
+  ],
+  "benefits": [
+    "Helps users budget free resources"
+  ],
+  "risks": [
+    "Personal consumption is not inferable from public prices"
+  ],
+  "related_ideas": [
+    "IDEA-000006",
+    "IDEA-000016",
+    "IDEA-000018"
+  ],
+  "evidence": []
+}

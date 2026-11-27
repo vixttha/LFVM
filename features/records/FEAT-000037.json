@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "id": "FEAT-000037",
+  "title": "Private account and workspace separation",
+  "summary": "Isolate personal usage data and access from the public dataset.",
+  "kind": "capability",
+  "lifecycle_status": "proposed",
+  "implementation_status": "not_planned",
+  "idea_ids": [
+    "IDEA-000016",
+    "IDEA-000007"
+  ],
+  "acceptance_criteria": [
+    "No account identifiers, credentials or private events appear in public Git or exports."
+  ],
+  "testing": {
+    "status": "untested"
+  },
+  "evidence": [],
+  "release_membership": "NOT_ASSERTED"
+}

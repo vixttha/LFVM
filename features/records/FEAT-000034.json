@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "id": "FEAT-000034",
+  "title": "Quota reset calendar",
+  "summary": "Display known reset and expiration dates with time-zone context.",
+  "kind": "capability",
+  "lifecycle_status": "proposed",
+  "implementation_status": "not_planned",
+  "idea_ids": [
+    "IDEA-000007",
+    "IDEA-000006"
+  ],
+  "acceptance_criteria": [
+    "Distinguish recurring, rolling and unknown dates",
+    "avoid inventing reset timestamps."
+  ],
+  "testing": {
+    "status": "untested"
+  },
+  "evidence": [],
+  "release_membership": "NOT_ASSERTED"
+}

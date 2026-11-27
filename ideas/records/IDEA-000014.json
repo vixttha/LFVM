@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "id": "IDEA-000014",
+  "title": "Alternative provider discovery",
+  "summary": "Find suitable alternatives to unavailable, exhausted or restricted offers using explicit compatibility criteria.",
+  "kind": "feature",
+  "origin": {
+    "created_by": "joint",
+    "source": "LFVM product vision and owner-approved catalog capture, 2026-11-26; implementation not authorized"
+  },
+  "lifecycle_status": "captured",
+  "implementation_status": "not_planned",
+  "testing": {
+    "status": "untested"
+  },
+  "importance": "high",
+  "complexity": "medium",
+  "categories": [
+    "discovery"
+  ],
+  "benefits": [
+    "Supports fallback planning"
+  ],
+  "risks": [
+    "Alternatives may have different fees or legal restrictions"
+  ],
+  "related_ideas": [
+    "IDEA-000008",
+    "IDEA-000009"
+  ],
+  "evidence": []
+}

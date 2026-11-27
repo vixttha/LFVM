@@ -1,0 +1,41 @@
+name: LFVM Provenistem catalog validation
+on:
+  push:
+    branches: [Provenistem]
+  pull_request:
+    branches: [Provenistem]
+permissions:
+  contents: read
+jobs:
+  catalog:
+    if: github.repository == 'vixttha/LFVM' && github.event.repository.private == false
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Validate exact catalog and canonical indexes
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          python -B tools/library.py check
+          python -B tools/library.py build
+          git diff --exit-code
+          python -B tools/verify_lfvm_catalog.py
+      - name: Upstream regression suite on pinned neutral fixture
+        run: |
+          set -euo pipefail
+          git init -q "$RUNNER_TEMP/provenistem-source"
+          git -C "$RUNNER_TEMP/provenistem-source" fetch --no-tags --depth=1 https://github.com/vixttha/Provenistem.git f676059bf15e466d18a0d49c317920c8c1160418
+          git -C "$RUNNER_TEMP/provenistem-source" checkout --detach FETCH_HEAD
+          test "$(git -C "$RUNNER_TEMP/provenistem-source" rev-parse HEAD)" = f676059bf15e466d18a0d49c317920c8c1160418
+          cd "$RUNNER_TEMP/provenistem-source/packages/provenistem"
+          python -B -m unittest discover -s tests -v
+      - name: Record exact revision and clean checkout
+        run: |
+          test -z "$(git status --porcelain)"
+          printf 'Catalog checkout: %s\nRun / attempt: %s / %s\nScope: catalog structure and source references only; no feature acceptance.\n' "$(git rev-parse HEAD)" "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" >> "$GITHUB_STEP_SUMMARY"

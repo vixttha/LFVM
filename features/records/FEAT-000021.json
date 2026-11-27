@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "id": "FEAT-000021",
+  "title": "Credits, tokens and resource-unit accounting",
+  "summary": "Account separately for credits, tokens, requests and compute units.",
+  "kind": "capability",
+  "lifecycle_status": "proposed",
+  "implementation_status": "not_planned",
+  "idea_ids": [
+    "IDEA-000006",
+    "IDEA-000007"
+  ],
+  "acceptance_criteria": [
+    "No implicit cross-unit conversions",
+    "distinguish input/output tokens and unknown exchange rules."
+  ],
+  "testing": {
+    "status": "untested"
+  },
+  "evidence": [],
+  "release_membership": "NOT_ASSERTED"
+}

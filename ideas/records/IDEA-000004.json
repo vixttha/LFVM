@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "id": "IDEA-000004",
+  "title": "Evidence-first provider verification",
+  "summary": "Bind material claims to dated field-specific evidence, preserving uncertainty and contradictions.",
+  "kind": "process",
+  "origin": {
+    "created_by": "joint",
+    "source": "LFVM product vision and owner-approved catalog capture, 2026-11-26; implementation not authorized"
+  },
+  "lifecycle_status": "captured",
+  "implementation_status": "not_planned",
+  "testing": {
+    "status": "untested"
+  },
+  "importance": "critical",
+  "complexity": "high",
+  "categories": [
+    "evidence"
+  ],
+  "benefits": [
+    "Supports reproducible research and transparent decisions"
+  ],
+  "risks": [
+    "Public documentation cannot establish personal billing outcomes"
+  ],
+  "related_ideas": [
+    "IDEA-000002",
+    "IDEA-000005"
+  ],
+  "evidence": [
+    {
+      "relation": "context",
+      "claim": "Pinned project design or policy context; not implementation or release proof.",
+      "repository": "vixttha/LFVM",
+      "commit": "56c1f378fd0d891426365875fcea242ba5592c2f",
+      "path": "DRAFT-QUALIFICATION-REPAIR.md"
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "id": "IDEA-000012",
+  "title": "Community-submitted resource discoveries",
+  "summary": "Allow proposed discoveries to enter a reviewed intake queue, not the canonical library automatically.",
+  "kind": "feature",
+  "origin": {
+    "created_by": "joint",
+    "source": "LFVM product vision and owner-approved catalog capture, 2026-11-26; implementation not authorized"
+  },
+  "lifecycle_status": "captured",
+  "implementation_status": "not_planned",
+  "testing": {
+    "status": "untested"
+  },
+  "importance": "medium",
+  "complexity": "high",
+  "categories": [
+    "community"
+  ],
+  "benefits": [
+    "Expands research coverage"
+  ],
+  "risks": [
+    "Spam, duplicates and malicious submissions require moderation"
+  ],
+  "related_ideas": [
+    "IDEA-000002",
+    "IDEA-000004"
+  ],
+  "evidence": []
+}

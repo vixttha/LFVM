@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "id": "FEAT-000024",
+  "title": "Validated machine-readable data exporter",
+  "summary": "Generate JSON or other machine-readable views from accepted library revisions.",
+  "kind": "capability",
+  "lifecycle_status": "proposed",
+  "implementation_status": "not_planned",
+  "idea_ids": [
+    "IDEA-000015",
+    "IDEA-000003"
+  ],
+  "acceptance_criteria": [
+    "Export records reconcile with canonical data and contain release/source pins",
+    "exclude private fields."
+  ],
+  "testing": {
+    "status": "untested"
+  },
+  "evidence": [
+    {
+      "kind": "other",
+      "claim": "Existing LFVM design or gate context only; not proof of delivered feature or accepted workbook.",
+      "source_sha": "56c1f378fd0d891426365875fcea242ba5592c2f",
+      "source_path": "WORKBOOK-DESIGN-REPAIR.md",
+      "receipt": "https://github.com/vixttha/LFVM/blob/56c1f378fd0d891426365875fcea242ba5592c2f/WORKBOOK-DESIGN-REPAIR.md"
+    }
+  ],
+  "release_membership": "NOT_ASSERTED"
+}

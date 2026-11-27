@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "id": "FEAT-000036",
+  "title": "Usage and expiration alerts",
+  "summary": "Provide optional alerts for known thresholds, resets and expirations.",
+  "kind": "capability",
+  "lifecycle_status": "proposed",
+  "implementation_status": "not_planned",
+  "idea_ids": [
+    "IDEA-000007",
+    "IDEA-000006"
+  ],
+  "acceptance_criteria": [
+    "Alerts use user-approved settings and documented dates",
+    "stale balances are labeled."
+  ],
+  "testing": {
+    "status": "untested"
+  },
+  "evidence": [],
+  "release_membership": "NOT_ASSERTED"
+}

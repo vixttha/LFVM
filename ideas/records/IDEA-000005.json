@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "id": "IDEA-000005",
+  "title": "Zero-cost resource safety",
+  "summary": "Distinguish advertised free allowances from scenario-specific verified zero cost, accounting for mandatory charges and paid conversion.",
+  "kind": "product",
+  "origin": {
+    "created_by": "joint",
+    "source": "LFVM product vision and owner-approved catalog capture, 2026-11-26; implementation not authorized"
+  },
+  "lifecycle_status": "captured",
+  "implementation_status": "not_planned",
+  "testing": {
+    "status": "untested"
+  },
+  "importance": "critical",
+  "complexity": "high",
+  "categories": [
+    "billing"
+  ],
+  "benefits": [
+    "Reduces accidental charges"
+  ],
+  "risks": [
+    "Unknown fees or account eligibility can invalidate a claim"
+  ],
+  "related_ideas": [
+    "IDEA-000004",
+    "IDEA-000006"
+  ],
+  "evidence": [
+    {
+      "relation": "context",
+      "claim": "Pinned project design or policy context; not implementation or release proof.",
+      "repository": "vixttha/LFVM",
+      "commit": "fa8c4fd2a8ad2da36ee60797b0d314494b7180e2",
+      "path": "LIBRARY-LAWS.md"
+    }
+  ]
+}

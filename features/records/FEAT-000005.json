@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "id": "FEAT-000005",
+  "title": "Free-tier classification system",
+  "summary": "Preserve F0-F5 and orthogonal classification dimensions.",
+  "kind": "capability",
+  "lifecycle_status": "proposed",
+  "implementation_status": "not_planned",
+  "idea_ids": [
+    "IDEA-000002"
+  ],
+  "acceptance_criteria": [
+    "Legacy labels are preserved",
+    "restricted or unverified offers are not misrepresented."
+  ],
+  "testing": {
+    "status": "untested"
+  },
+  "evidence": [
+    {
+      "kind": "other",
+      "claim": "Existing LFVM design or gate context only; not proof of delivered feature or accepted workbook.",
+      "source_sha": "fa8c4fd2a8ad2da36ee60797b0d314494b7180e2",
+      "source_path": "LIBRARY-LAWS.md",
+      "receipt": "https://github.com/vixttha/LFVM/blob/fa8c4fd2a8ad2da36ee60797b0d314494b7180e2/LIBRARY-LAWS.md"
+    }
+  ],
+  "release_membership": "NOT_ASSERTED"
+}

@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "id": "IDEA-000013",
+  "title": "Reproducible computing benchmarks",
+  "summary": "Record comparable workload measurements tied to resource profiles, environment and test evidence.",
+  "kind": "research",
+  "origin": {
+    "created_by": "joint",
+    "source": "LFVM product vision and owner-approved catalog capture, 2026-11-26; implementation not authorized"
+  },
+  "lifecycle_status": "captured",
+  "implementation_status": "not_planned",
+  "testing": {
+    "status": "untested"
+  },
+  "importance": "high",
+  "complexity": "high",
+  "categories": [
+    "compatibility"
+  ],
+  "benefits": [
+    "Supports realistic performance comparisons"
+  ],
+  "risks": [
+    "Workload restrictions and variable shared hardware limit comparability"
+  ],
+  "related_ideas": [
+    "IDEA-000008"
+  ],
+  "evidence": [
+    {
+      "relation": "context",
+      "claim": "Pinned project design or policy context; not implementation or release proof.",
+      "repository": "vixttha/LFVM",
+      "commit": "56c1f378fd0d891426365875fcea242ba5592c2f",
+      "path": "schemas/workbook-draft-v1.json"
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "id": "IDEA-000011",
+  "title": "Historical free-tier intelligence",
+  "summary": "Retain superseded offers, changes and effective dates without changing locked editions.",
+  "kind": "feature",
+  "origin": {
+    "created_by": "joint",
+    "source": "LFVM product vision and owner-approved catalog capture, 2026-11-26; implementation not authorized"
+  },
+  "lifecycle_status": "captured",
+  "implementation_status": "not_planned",
+  "testing": {
+    "status": "untested"
+  },
+  "importance": "high",
+  "complexity": "high",
+  "categories": [
+    "history"
+  ],
+  "benefits": [
+    "Enables longitudinal comparison and change explanations"
+  ],
+  "risks": [
+    "History can mislead if shown as current data"
+  ],
+  "related_ideas": [
+    "IDEA-000004",
+    "IDEA-000010"
+  ],
+  "evidence": [
+    {
+      "relation": "context",
+      "claim": "Pinned project design or policy context; not implementation or release proof.",
+      "repository": "vixttha/LFVM",
+      "commit": "56c1f378fd0d891426365875fcea242ba5592c2f",
+      "path": "schemas/workbook-draft-v1.json"
+    }
+  ]
+}

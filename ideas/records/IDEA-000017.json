@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "id": "IDEA-000017",
+  "title": "Free computing workload planner",
+  "summary": "Estimate a workload's capacity and allowance needs against compatible options before selecting a service.",
+  "kind": "feature",
+  "origin": {
+    "created_by": "joint",
+    "source": "LFVM product vision and owner-approved catalog capture, 2026-11-26; implementation not authorized"
+  },
+  "lifecycle_status": "captured",
+  "implementation_status": "not_planned",
+  "testing": {
+    "status": "untested"
+  },
+  "importance": "high",
+  "complexity": "high",
+  "categories": [
+    "planning"
+  ],
+  "benefits": [
+    "Helps avoid exhausting scarce free quotas"
+  ],
+  "risks": [
+    "Estimates are not guaranteed availability or pricing"
+  ],
+  "related_ideas": [
+    "IDEA-000006",
+    "IDEA-000008",
+    "IDEA-000009"
+  ],
+  "evidence": []
+}

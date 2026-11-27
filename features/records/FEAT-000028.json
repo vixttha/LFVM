@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "id": "FEAT-000028",
+  "title": "Provider comparison interface",
+  "summary": "Compare compatible offers side by side with material restrictions.",
+  "kind": "capability",
+  "lifecycle_status": "proposed",
+  "implementation_status": "not_planned",
+  "idea_ids": [
+    "IDEA-000014",
+    "IDEA-000008"
+  ],
+  "acceptance_criteria": [
+    "Show distinct allowances, fees, evidence and unknowns without a misleading common score."
+  ],
+  "testing": {
+    "status": "untested"
+  },
+  "evidence": [],
+  "release_membership": "NOT_ASSERTED"
+}

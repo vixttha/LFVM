@@ -5,11 +5,19 @@
   "categories": [
     "workflow"
   ],
-  "complexity": "unknown",
-  "evidence": [],
+  "complexity": "high",
+  "evidence": [
+    {
+      "relation": "context",
+      "claim": "Pinned project design or policy context; not implementation or release proof.",
+      "repository": "vixttha/LFVM",
+      "commit": "fa8c4fd2a8ad2da36ee60797b0d314494b7180e2",
+      "path": "TEMPLATE-CONTRACT.md"
+    }
+  ],
   "id": "IDEA-000001",
   "implementation_status": "not_planned",
-  "importance": "unknown",
+  "importance": "critical",
   "kind": "process",
   "lifecycle_status": "captured",
   "origin": {

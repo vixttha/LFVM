@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "id": "FEAT-000032",
+  "title": "Personal resource usage ledger",
+  "summary": "Record private manual or authorized consumption events by account and quota.",
+  "kind": "capability",
+  "lifecycle_status": "proposed",
+  "implementation_status": "not_planned",
+  "idea_ids": [
+    "IDEA-000007",
+    "IDEA-000016"
+  ],
+  "acceptance_criteria": [
+    "Usage has explicit units, period and source",
+    "no private records appear in public exports."
+  ],
+  "testing": {
+    "status": "untested"
+  },
+  "evidence": [],
+  "release_membership": "NOT_ASSERTED"
+}

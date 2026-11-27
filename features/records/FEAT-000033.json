@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "id": "FEAT-000033",
+  "title": "Remaining allowance calculator",
+  "summary": "Calculate remaining allowance within documented quota windows.",
+  "kind": "capability",
+  "lifecycle_status": "proposed",
+  "implementation_status": "not_planned",
+  "idea_ids": [
+    "IDEA-000006",
+    "IDEA-000007",
+    "IDEA-000017"
+  ],
+  "acceptance_criteria": [
+    "Handle shared pools, reset rules, unknown balances and overuse without false precision."
+  ],
+  "testing": {
+    "status": "untested"
+  },
+  "evidence": [],
+  "release_membership": "NOT_ASSERTED"
+}

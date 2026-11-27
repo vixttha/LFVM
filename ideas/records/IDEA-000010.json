@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "id": "IDEA-000010",
+  "title": "Automated provider change detection",
+  "summary": "Explore permitted public-source checks for changes in pricing, access, quotas and terms with human review.",
+  "kind": "research",
+  "origin": {
+    "created_by": "joint",
+    "source": "LFVM product vision and owner-approved catalog capture, 2026-11-26; implementation not authorized"
+  },
+  "lifecycle_status": "captured",
+  "implementation_status": "not_planned",
+  "testing": {
+    "status": "untested"
+  },
+  "importance": "high",
+  "complexity": "high",
+  "categories": [
+    "monitoring"
+  ],
+  "benefits": [
+    "Improves freshness of offer data"
+  ],
+  "risks": [
+    "Rate limits, false positives and changing terms require review"
+  ],
+  "related_ideas": [
+    "IDEA-000004",
+    "IDEA-000011"
+  ],
+  "evidence": [
+    {
+      "relation": "context",
+      "claim": "Pinned project design or policy context; not implementation or release proof.",
+      "repository": "vixttha/LFVM",
+      "commit": "fa8c4fd2a8ad2da36ee60797b0d314494b7180e2",
+      "path": "LIBRARY-LAWS.md"
+    }
+  ]
+}

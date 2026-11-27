@@ -1,11 +1,22 @@
 {
   "acceptance_criteria": [
-    "No filled workbook is locked before accepted blank template and evidence validation."
+    "No filled workbook is locked before accepted blank template and evidence validation.",
+    "Reconcile all 54 source records with documented dispositions before initial data acceptance."
   ],
-  "evidence": [],
+  "evidence": [
+    {
+      "kind": "other",
+      "claim": "Existing LFVM design or gate context only; not proof of delivered feature or accepted workbook.",
+      "source_sha": "fa8c4fd2a8ad2da36ee60797b0d314494b7180e2",
+      "source_path": "SOURCE-MIGRATION-REPAIR.md",
+      "receipt": "https://github.com/vixttha/LFVM/blob/fa8c4fd2a8ad2da36ee60797b0d314494b7180e2/SOURCE-MIGRATION-REPAIR.md"
+    }
+  ],
   "id": "FEAT-000002",
   "idea_ids": [
-    "IDEA-000001"
+    "IDEA-000001",
+    "IDEA-000002",
+    "IDEA-000004"
   ],
   "implementation_status": "not_planned",
   "kind": "capability",

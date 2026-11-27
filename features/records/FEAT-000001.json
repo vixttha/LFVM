@@ -1,8 +1,17 @@
 {
   "acceptance_criteria": [
-    "Accepted template version, exact commit and workbook digest exist before population."
+    "Accepted template version, exact commit and workbook digest exist before population.",
+    "All eight research tables are empty and the approved workbook acceptance suite passes."
   ],
-  "evidence": [],
+  "evidence": [
+    {
+      "kind": "other",
+      "claim": "Existing LFVM design or gate context only; not proof of delivered feature or accepted workbook.",
+      "source_sha": "56c1f378fd0d891426365875fcea242ba5592c2f",
+      "source_path": "FOUNDATION-GATE.md",
+      "receipt": "https://github.com/vixttha/LFVM/blob/56c1f378fd0d891426365875fcea242ba5592c2f/FOUNDATION-GATE.md"
+    }
+  ],
   "id": "FEAT-000001",
   "idea_ids": [
     "IDEA-000001"

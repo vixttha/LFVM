@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "id": "IDEA-000003",
+  "title": "Spreadsheet-backed web application",
+  "summary": "Expose approved spreadsheet data through a reproducible read-only delivery layer and searchable web UI.",
+  "kind": "architecture",
+  "origin": {
+    "created_by": "joint",
+    "source": "LFVM product vision and owner-approved catalog capture, 2026-11-26; implementation not authorized"
+  },
+  "lifecycle_status": "captured",
+  "implementation_status": "not_planned",
+  "testing": {
+    "status": "untested"
+  },
+  "importance": "critical",
+  "complexity": "high",
+  "categories": [
+    "web"
+  ],
+  "benefits": [
+    "Reuses canonical provider data without duplicate editing"
+  ],
+  "risks": [
+    "Stale exports or unapproved schema changes could mislead users"
+  ],
+  "related_ideas": [
+    "IDEA-000002",
+    "IDEA-000015",
+    "IDEA-000016"
+  ],
+  "evidence": [
+    {
+      "relation": "context",
+      "claim": "Pinned project design or policy context; not implementation or release proof.",
+      "repository": "vixttha/LFVM",
+      "commit": "56c1f378fd0d891426365875fcea242ba5592c2f",
+      "path": "schemas/workbook-draft-v1.json"
+    }
+  ]
+}

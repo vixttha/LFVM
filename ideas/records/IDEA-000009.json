@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "id": "IDEA-000009",
+  "title": "Intelligent free computing recommendations",
+  "summary": "Suggest resources using explicit workload constraints, evidence quality and known limitations.",
+  "kind": "feature",
+  "origin": {
+    "created_by": "joint",
+    "source": "LFVM product vision and owner-approved catalog capture, 2026-11-26; implementation not authorized"
+  },
+  "lifecycle_status": "captured",
+  "implementation_status": "not_planned",
+  "testing": {
+    "status": "untested"
+  },
+  "importance": "high",
+  "complexity": "high",
+  "categories": [
+    "discovery"
+  ],
+  "benefits": [
+    "Reduces manual comparison effort"
+  ],
+  "risks": [
+    "Opaque rankings may hide uncertainty or eligibility constraints"
+  ],
+  "related_ideas": [
+    "IDEA-000008",
+    "IDEA-000014",
+    "IDEA-000017"
+  ],
+  "evidence": []
+}
