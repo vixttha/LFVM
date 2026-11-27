@@ -10,7 +10,7 @@ import unittest
 import zipfile
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
-from foundation import (BASE, BASE_DOCS, CONFIG, ROOT_DOCS, Invalid, validate, strict_json, version, verify_event, preflight_xlsx, safe_csv_text, streaming_sha256)
+from foundation import (BASE, BASE_DOCS, CONFIG, ROOT_DOCS, Invalid, validate, strict_json, version, verify_event, preflight_xlsx, safe_csv_text, streaming_sha256, verify_handoff_bytes)
 
 CONTRACT = Path(__file__).resolve().parents[1] / "schemas" / "foundation-contract.json"
 
@@ -142,6 +142,19 @@ class FoundationTests(unittest.TestCase):
             try: p.symlink_to(root/"README.md")
             except (OSError,NotImplementedError): self.skipTest("symlink privilege unavailable")
             with self.assertRaises(Invalid): validate(root,"template_schema")
+    def test_handoff_crlf_checkout(self):
+        original = b"a\nb\n"
+        verify_handoff_bytes(original, original, original)
+        verify_handoff_bytes(original, original, b"a\r\nb\r\n")
+
+    def test_handoff_reject_changed_git_blob(self):
+        with self.assertRaises(Invalid):
+            verify_handoff_bytes(b"a\n", b"b\n", b"b\n")
+
+    def test_handoff_reject_changed_checkout(self):
+        with self.assertRaises(Invalid):
+            verify_handoff_bytes(b"a\n", b"a\n", b"b\n")
+
     def test_event_context(self):
         for k,(branch,*_) in CONFIG.items():
             sha="a"*40
