@@ -1,0 +1,15 @@
+name: Filled library archive integrity
+on:
+  push:
+    branches: [library-of-free-virtual-machines-spreadsheet-library]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  archive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Validate library archive metadata (not data qualification)
+        run: python3 scripts/validate_library_archive.py

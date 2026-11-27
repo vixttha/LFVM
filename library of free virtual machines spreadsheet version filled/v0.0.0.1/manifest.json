@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "data_version": "v0.0.0.1",
+  "predecessor": null,
+  "status": "blocked_on_template",
+  "owner_import_approved": false,
+  "owner_locked": false,
+  "template": {
+    "branch": "library-of-free-virtual-machines-spreadsheet-template",
+    "target_version": "v0.0.0.1",
+    "accepted_version": null,
+    "commit_sha": null,
+    "artifact_path": null,
+    "sha256": null
+  },
+  "source_baseline": {
+    "expected_source_records": 54,
+    "imported_source_records": 0,
+    "unique_providers": null,
+    "offer_count": null,
+    "source_snapshot_sha256": null
+  },
+  "artifacts": [],
+  "validation": {
+    "planned": 24,
+    "executed": 0,
+    "passed": 0
+  },
+  "documents": [
+    "README.md",
+    "PLAN.md",
+    "CHANGES.md",
+    "AUDIT.md",
+    "VALIDATION.md",
+    "RECONCILIATION.md"
+  ]
+}
