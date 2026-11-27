@@ -299,7 +299,13 @@ def streaming_sha256(path, limit=104857600):
 def safe_csv_text(value):
     """Preserve data in canonical storage; escape potentially executable CSV text on export."""
     require(type(value) is str, "CSV text must be a string")
-    if value.startswith(("\t","\r","\n")) or value.lstrip().startswith(("=","+","-","@","\uff1d","\uff0b","\uff0d","\uff20")):
+    require("\x00" not in value, "NUL is not valid CSV text")
+    # Inspect normalized text, preserving the original bytes in canonical storage.
+    probe = unicodedata.normalize("NFKC", value)
+    leading = 0
+    while leading < len(probe) and (probe[leading].isspace() or unicodedata.category(probe[leading]).startswith("C")):
+        leading += 1
+    if value.startswith(("\t","\r","\n")) or probe[leading:].startswith(("=","+","-","@")) or any(unicodedata.category(c).startswith("C") for c in probe[:leading]):
         return "'" + value
     return value
 
@@ -315,6 +321,11 @@ def preflight_xlsx(path):
         total = 0
         xml = {}
         relationships = []
+        content_keys = set()
+        override_targets = []
+        active_elements = {"oleObject", "oleObjects", "control", "controls", "ddeLink", "ddeLinks",
+                           "externalLink", "externalReferences", "connection", "connections",
+                           "queryTable", "webExtension", "legacyDrawing", "legacyDrawingHF"}
         for i in infos:
             name = i.filename
             require(not i.is_dir() and not name.startswith("/") and "\\" not in name, "unsafe ZIP name")
@@ -324,7 +335,7 @@ def preflight_xlsx(path):
             names.add(name.casefold())
             require(not i.flag_bits & 1 and i.compress_type in {zipfile.ZIP_STORED, zipfile.ZIP_DEFLATED}, "encrypted/unsupported ZIP member")
             mode = (i.external_attr >> 16) & 0xFFFF
-            require(not stat.S_ISLNK(mode), "ZIP symlink")
+            require(stat.S_IFMT(mode) in {0, stat.S_IFREG}, "ZIP special file or symlink")
             require(i.file_size <= 33554432 and i.file_size <= max(i.compress_size, 1)*200, "ZIP member size or ratio")
             total += i.file_size
             require(total <= 268435456, "ZIP expansion limit")
@@ -336,6 +347,12 @@ def preflight_xlsx(path):
             content = data.decode("utf-8-sig")
             require("\x00" not in content and "<!DOCTYPE" not in content.upper() and "<!ENTITY" not in content.upper(), "unsafe XML declaration")
             el = ET.fromstring(content)
+            for node in el.iter():
+                name_local = node.tag.rsplit("}",1)[-1]
+                require(name_local not in active_elements, "active XML element")
+                if name_local == "definedName":
+                    defined_name = node.attrib.get("name", "").casefold()
+                    require(defined_name not in {"auto_open", "auto_close", "_xlnm.auto_open", "_xlnm.auto_close"}, "automatic defined name")
             if low.endswith(".rels"):
                 rel_ns = "{http://schemas.openxmlformats.org/package/2006/relationships}"
                 require(el.tag == rel_ns + "Relationships", "invalid relationship root")
@@ -367,10 +384,25 @@ def preflight_xlsx(path):
                 for ct in el:
                     require(ct.tag in {ct_ns + "Default", ct_ns + "Override"}, "invalid content-type element")
                     value = ct.attrib.get("ContentType","").lower()
-                    require(value and not any(x in value for x in ("macroenabled","vba","activex","oleobject","externalLink".lower())), "active content type")
+                    require(value and not any(x in value for x in ("macroenabled","vba","activex","oleobject","externallink","macrosheet","dialogsheet","webextension")), "active content type")
+                    if ct.tag == ct_ns + "Override":
+                        part_name = ct.attrib.get("PartName", "")
+                        require(part_name.startswith("/") and not part_name.startswith("//"), "invalid content override path")
+                        override_path = part_name[1:]
+                        for part in override_path.split("/"):
+                            portable_name(part)
+                        content_key = ("override", override_path.casefold())
+                        override_targets.append(override_path)
+                    else:
+                        ext = ct.attrib.get("Extension", "")
+                        require(re.fullmatch(r"[A-Za-z0-9]+", ext) is not None, "invalid default content extension")
+                        content_key = ("default", ext.casefold())
+                    require(content_key not in content_keys, "duplicate content type mapping")
+                    content_keys.add(content_key)
             xml[name] = el
         require({"[Content_Types].xml","_rels/.rels","xl/workbook.xml"} <= set(xml), "required OOXML parts absent")
         require(all(target in xml for target in relationships), "relationship target absent from package")
+        require(all(target in xml for target in override_targets), "content override target absent from package")
         require(xml["xl/workbook.xml"].tag == "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}workbook", "invalid workbook root")
     return digest
 
