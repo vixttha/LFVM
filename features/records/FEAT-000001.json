@@ -1,0 +1,20 @@
+{
+  "acceptance_criteria": [
+    "Accepted template version, exact commit and workbook digest exist before population."
+  ],
+  "evidence": [],
+  "id": "FEAT-000001",
+  "idea_ids": [
+    "IDEA-000001"
+  ],
+  "implementation_status": "not_planned",
+  "kind": "capability",
+  "lifecycle_status": "proposed",
+  "release_membership": "NOT_ASSERTED",
+  "schema_version": 1,
+  "summary": "Design an LLM-readable, portable blank spreadsheet template.",
+  "testing": {
+    "status": "untested"
+  },
+  "title": "Blank spreadsheet template"
+}

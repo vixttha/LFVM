@@ -1,0 +1,29 @@
+{
+  "benefits": [
+    "Preserves versioned template and data separation"
+  ],
+  "categories": [
+    "workflow"
+  ],
+  "complexity": "unknown",
+  "evidence": [],
+  "id": "IDEA-000001",
+  "implementation_status": "not_planned",
+  "importance": "unknown",
+  "kind": "process",
+  "lifecycle_status": "captured",
+  "origin": {
+    "created_by": "human",
+    "source": "LFVM permanent branch instructions and owner-approved project direction"
+  },
+  "related_ideas": [],
+  "risks": [
+    "Schema changes require coordinated review"
+  ],
+  "schema_version": 1,
+  "summary": "Maintain independent template and populated spreadsheet editions; do not import or publish before foundation acceptance.",
+  "testing": {
+    "status": "untested"
+  },
+  "title": "Separate reusable blank template from research library"
+}

@@ -1,0 +1,20 @@
+{
+  "acceptance_criteria": [
+    "No filled workbook is locked before accepted blank template and evidence validation."
+  ],
+  "evidence": [],
+  "id": "FEAT-000002",
+  "idea_ids": [
+    "IDEA-000001"
+  ],
+  "implementation_status": "not_planned",
+  "kind": "capability",
+  "lifecycle_status": "proposed",
+  "release_membership": "NOT_ASSERTED",
+  "schema_version": 1,
+  "summary": "Classify free compute offers using public evidence and the accepted template.",
+  "testing": {
+    "status": "untested"
+  },
+  "title": "Free virtual machine research library"
+}
