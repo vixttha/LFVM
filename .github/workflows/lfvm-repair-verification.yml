@@ -1,0 +1,49 @@
+name: LFVM Veraphify permanent verification
+on:
+  push:
+    branches: ['Veraphify']
+  pull_request:
+    branches: ['Veraphify']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: lfvm-verify-Veraphify-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  verify:
+    if: github.repository == 'vixttha/LFVM' && github.event.repository.private == false && (github.event_name != 'workflow_dispatch' || github.ref == 'refs/heads/Veraphify')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Verify exact checkout and historical installation
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          python -B tools/verify_lfvm_repair.py
+      - name: Native positive and negative regression checks
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check veraphifiy.mjs
+          node veraphifiy.mjs --help
+          node veraphifiy.mjs --version | grep -Fx v0.0.9
+          if node veraphifiy.mjs verify --archive "$RUNNER_TEMP/absent-archive" --project vixttha/LFVM --version v0.0.0.1 2>"$RUNNER_TEMP/negative.log"; then exit 1; fi
+          grep -F 'Project version is not archived' "$RUNNER_TEMP/negative.log"
+          git show 8e76fa6292e69e2d2835c04130e3881e09822c48:veraphifiy.mjs | cmp - veraphifiy.mjs
+          git init -q "$RUNNER_TEMP/notice-source"
+          git -C "$RUNNER_TEMP/notice-source" fetch --no-tags --depth=1 https://github.com/vixttha/Veraphify.git add4a029312c958a5e126990fc49e802c0112c27
+          git -C "$RUNNER_TEMP/notice-source" show FETCH_HEAD:brand-identity/LICENSE | cmp - brand-identity/LICENSE
+      - name: Record exact checkout and clean state
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -z "$(git status --porcelain)"
+          printf 'LFVM verification checkout: %s\nRun / attempt: %s / %s\nScope: installation and regression controls only; no workbook or release acceptance.\n' "$(git rev-parse HEAD)" "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" >> "$GITHUB_STEP_SUMMARY"

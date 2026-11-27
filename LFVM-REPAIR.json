@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "repository": "vixttha/LFVM",
+  "branch": "Veraphify",
+  "base_commit": "8e76fa6292e69e2d2835c04130e3881e09822c48",
+  "findings": [
+    "Missing installed-files inventory target",
+    "Missing Brand Identity license reference"
+  ],
+  "links": [
+    {
+      "source": "docs/reuse.md",
+      "target": "../test-vault/README.md#installed-files"
+    },
+    {
+      "source": "docs/reuse.md",
+      "target": "../brand-identity/LICENSE"
+    }
+  ],
+  "added_paths": [
+    ".github/workflows/lfvm-repair-verification.yml",
+    "LFVM-REPAIR.json",
+    "brand-identity/LICENSE",
+    "test-vault/README.md",
+    "tools/verify_lfvm_repair.py"
+  ],
+  "scope": "Additive repair; original LFVM-INSTALL.json is historical; current validation requires exact-checkout workflow evidence. No upstream version promotion, workbook creation, cross-branch write or release."
+}
