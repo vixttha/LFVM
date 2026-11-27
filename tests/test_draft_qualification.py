@@ -1,0 +1,169 @@
+"""Synthetic-only qualification and recovery regressions."""
+from datetime import date
+from pathlib import Path
+import copy
+import sys
+import tempfile
+import unittest
+import zipfile
+from xml.etree import ElementTree as ET
+sys.path.insert(0,str(Path(__file__).resolve().parents[1]/"scripts"))
+from foundation import Invalid
+from qualification import artifact_inventory, canonical, digest
+from draft_qualification import evidence_check, read_draft_xlsx, publish_staged_pointer, verify_migration, M, R, P, T, col_name
+from test_draft_records import SCHEMA, fixture, row, uid
+
+DAY=date(2026,1,10)
+def evidence_fixture():
+    d=fixture()
+    # Mark all material values unknown except the explicitly documented environment
+    # and resource measurement, with exact typed official evidence.
+    for i,(table,rid,field,value) in enumerate((
+        ("05_OFFERS",uid(3),"environment","vm"),
+        ("06_RESOURCES",uid(5),"value_min",4),
+        ("06_RESOURCES",uid(5),"unit","GiB"),
+        ("06_RESOURCES",uid(5),"guarantee","typical"),
+    ),20):
+        d["09_EVIDENCE"].append(row("09_EVIDENCE",evidence_id=uid(i),claim_id=uid(i+100),target_table=table,target_id=rid,field_name=field,claimed_value=canonical(value).decode(),source_url="https://example.org/fixture",retrieved_on="2026-01-01",review_due="2026-01-20",grade="E3",outcome="supports"))
+    return d
+
+class EvidenceTests(unittest.TestCase):
+    def reject(self,edit):
+        d=evidence_fixture();edit(d)
+        with self.assertRaises(Invalid):evidence_check(SCHEMA,d,DAY)
+    def test_current(self):
+        self.assertEqual(evidence_check(SCHEMA,evidence_fixture(),DAY)["material_fields_covered"],4)
+    def test_missing(self):self.reject(lambda d:d["09_EVIDENCE"].pop())
+    def test_mismatch(self):self.reject(lambda d:d["09_EVIDENCE"][1].update(claimed_value="5"))
+    def test_wrong_type(self):self.reject(lambda d:d["09_EVIDENCE"][1].update(claimed_value="true"))
+    def test_expired(self):self.reject(lambda d:d["09_EVIDENCE"][0].update(review_due="2026-01-02"))
+    def test_future_retrieval(self):self.reject(lambda d:d["09_EVIDENCE"][0].update(retrieved_on="2026-01-11"))
+    def test_future_effective(self):self.reject(lambda d:d["09_EVIDENCE"][0].update(effective_on="2026-01-11"))
+    def test_excessive_review(self):self.reject(lambda d:d["09_EVIDENCE"][0].update(review_due="2027-01-01"))
+    def test_low_grade(self):self.reject(lambda d:d["09_EVIDENCE"][0].update(grade="E1"))
+    def test_conflict(self):
+        def edit(d):
+            e=copy.deepcopy(d["09_EVIDENCE"][0]);e.update(evidence_id=uid(90),outcome="contradicts",claimed_value='"container"');d["09_EVIDENCE"].append(e)
+        self.reject(edit)
+    def test_claim_identity(self):
+        def edit(d):
+            e=copy.deepcopy(d["09_EVIDENCE"][0]);e.update(evidence_id=uid(90),claim_id=uid(91));d["09_EVIDENCE"].append(e)
+        self.reject(edit)
+
+def package(path,data=None,mutate=None):
+    """Build disposable OOXML test fixture, never a release artifact."""
+    parts={}
+    def root(tag,**attrs):return ET.Element(tag,attrs)
+    def put(name,element):parts[name]=element
+    ct="{http://schemas.openxmlformats.org/package/2006/content-types}"
+    types=root(ct+"Types")
+    ET.SubElement(types,ct+"Default",Extension="xml",ContentType="application/xml")
+    ET.SubElement(types,ct+"Default",Extension="rels",ContentType="application/vnd.openxmlformats-package.relationships+xml")
+    put("[Content_Types].xml",types)
+    package_rels=root(P+"Relationships")
+    ET.SubElement(package_rels,P+"Relationship",Id="rId1",Type=T+"officeDocument",Target="xl/workbook.xml")
+    put("_rels/.rels",package_rels)
+    workbook=root(M+"workbook");sheets=ET.SubElement(workbook,M+"sheets")
+    workbook_rels=root(P+"Relationships")
+    tables={t["sheet"]:t for t in SCHEMA["tables"]}
+    def add_cell(rr,i,n,v):
+        if v is None:return
+        c=ET.SubElement(rr,M+"c",r=col_name(i)+str(n))
+        if type(v) is str:
+            c.set("t","inlineStr");ET.SubElement(ET.SubElement(c,M+"is"),M+"t").text=v
+        elif type(v) is bool:
+            c.set("t","b");ET.SubElement(c,M+"v").text="1" if v else "0"
+        else:ET.SubElement(c,M+"v").text=str(v)
+    for i,name in enumerate(SCHEMA["sheet_order"],1):
+        rid=f"rId{i}";sp=f"xl/worksheets/sheet{i}.xml"
+        ET.SubElement(sheets,M+"sheet",{"name":name,"sheetId":str(i),R+"id":rid})
+        ET.SubElement(workbook_rels,P+"Relationship",Id=rid,Type=T+"worksheet",Target=f"worksheets/sheet{i}.xml")
+        ws=root(M+"worksheet");sd=ET.SubElement(ws,M+"sheetData")
+        put(sp,ws)
+        if name=="00_README":
+            add_cell(ET.SubElement(sd,M+"row",r="1"),1,1,"Synthetic fixture");continue
+        headers=[c["name"] for c in tables[name]["columns"]]
+        rr=ET.SubElement(sd,M+"row",r="1")
+        for j,h in enumerate(headers,1):add_cell(rr,j,1,h)
+        content=(data or {}).get(name,[])
+        for k,record in enumerate(content,2):
+            rr=ET.SubElement(sd,M+"row",r=str(k))
+            for j,h in enumerate(headers,1):add_cell(rr,j,k,record[h])
+        tp=ET.SubElement(ws,M+"tableParts",count="1")
+        ET.SubElement(tp,M+"tablePart",{R+"id":"rId1"})
+        sr=root(P+"Relationships")
+        ET.SubElement(sr,P+"Relationship",Id="rId1",Type=T+"table",Target=f"../tables/table{i}.xml")
+        put(f"xl/worksheets/_rels/sheet{i}.xml.rels",sr)
+        table=root(M+"table",id=str(i),name=f"Table{i}",displayName=f"Table{i}",ref="A1:"+col_name(len(headers))+str(len(content)+1))
+        tc=ET.SubElement(table,M+"tableColumns",count=str(len(headers)))
+        for j,h in enumerate(headers,1):ET.SubElement(tc,M+"tableColumn",id=str(j),name=h)
+        put(f"xl/tables/table{i}.xml",table)
+    put("xl/workbook.xml",workbook);put("xl/_rels/workbook.xml.rels",workbook_rels)
+    if mutate:mutate(parts)
+    with zipfile.ZipFile(path,"w",zipfile.ZIP_DEFLATED) as z:
+        for n,p in parts.items():z.writestr(n,ET.tostring(p,encoding="utf-8"))
+
+class WorkbookTests(unittest.TestCase):
+    def run_case(self,mutate=None,data=None,blank=True,good=False):
+        with tempfile.TemporaryDirectory() as d:
+            p=Path(d)/"synthetic.xlsx";package(p,data,mutate)
+            if good:return read_draft_xlsx(p,SCHEMA,blank=blank)
+            with self.assertRaises(Invalid):read_draft_xlsx(p,SCHEMA,blank=blank)
+    def test_blank(self):self.assertEqual(sum(self.run_case(good=True)["table_rows"].values()),0)
+    def test_filled(self):self.assertEqual(self.run_case(data=fixture(),blank=False,good=True)["research"],fixture())
+    def test_data_in_blank(self):self.run_case(data=fixture())
+    def test_wrong_name(self):self.run_case(lambda p:p["xl/workbook.xml"].find(M+"sheets")[0].set("name","wrong"))
+    def test_hidden_sheet(self):self.run_case(lambda p:p["xl/workbook.xml"].find(M+"sheets")[0].set("state","hidden"))
+    def test_header(self):self.run_case(lambda p:p["xl/worksheets/sheet5.xml"].find(".//"+M+"t").__setattr__("text","wrong"))
+    def test_table_range(self):self.run_case(lambda p:p["xl/tables/table5.xml"].set("ref","A1:A2"))
+    def test_table_header_metadata(self):self.run_case(lambda p:p["xl/tables/table5.xml"].find(M+"tableColumns")[0].set("name","wrong"))
+    def test_formula(self):self.run_case(lambda p:ET.SubElement(p["xl/worksheets/sheet5.xml"].find(".//"+M+"c"),M+"f").__setattr__("text","1+1"))
+    def test_hidden_row(self):self.run_case(lambda p:p["xl/worksheets/sheet5.xml"].find(".//"+M+"row").set("hidden","1"))
+    def test_orphan(self):self.run_case(lambda p:p.update({"xl/worksheets/orphan.xml":ET.Element(M+"worksheet")}))
+    def test_duplicate_cell(self):
+        def mutate(p):
+            rr=p["xl/worksheets/sheet5.xml"].find(".//"+M+"row");rr.append(copy.deepcopy(rr[0]))
+        self.run_case(mutate)
+    def test_merged(self):self.run_case(lambda p:ET.SubElement(p["xl/worksheets/sheet5.xml"],M+"mergeCells"))
+
+class RecoveryTests(unittest.TestCase):
+    def setUp(self):
+        self.tmp=tempfile.TemporaryDirectory();self.addCleanup(self.tmp.cleanup)
+        self.root=Path(self.tmp.name)
+        self.old=b'{"edition":"previous"}';(self.root/"current.json").write_bytes(self.old)
+        self.stage=self.root/"candidate";self.stage.mkdir();(self.stage/"data.json").write_text("{}",encoding="utf-8")
+        self.inventory=artifact_inventory(self.stage)
+    def publish(self,inject=None):
+        return publish_staged_pointer(self.root,self.old,"candidate",self.inventory,inject=inject)
+    def test_success(self):self.assertEqual(self.publish(),(self.root/"current.json").read_bytes())
+    def test_stale(self):
+        (self.root/"current.json").write_bytes(b"changed")
+        with self.assertRaises(Invalid):self.publish()
+        self.assertEqual((self.root/"current.json").read_bytes(),b"changed")
+    def test_locked(self):
+        (self.root/".publish.lock").write_bytes(b"existing")
+        with self.assertRaises(FileExistsError):self.publish()
+        self.assertEqual((self.root/".publish.lock").read_bytes(),b"existing")
+    def test_failure(self):
+        def fail(stage):
+            if stage=="before_replace":raise RuntimeError("synthetic interruption")
+        with self.assertRaises(RuntimeError):self.publish(fail)
+        self.assertEqual((self.root/"current.json").read_bytes(),self.old)
+        self.assertFalse((self.root/".publish.lock").exists())
+        self.assertEqual(list(self.root.glob(".pointer-*")),[])
+    def test_modified_stage(self):
+        def edit(stage):
+            if stage=="before_replace":(self.stage/"data.json").write_text('{"changed":true}',encoding="utf-8")
+        with self.assertRaises(Invalid):self.publish(edit)
+        self.assertEqual((self.root/"current.json").read_bytes(),self.old)
+    def test_migration_missing_sources(self):
+        data=evidence_fixture();snap=canonical({"schema_version":1,"records":[]})
+        with self.assertRaises(Invalid):verify_migration(SCHEMA,snap,digest(snap),[],{k:[] for k in data},data,DAY)
+    def test_migration_54(self):
+        data=evidence_fixture()
+        records=[{"source_id":f"source-{i}","original":{"name":f"Synthetic {i}"}} for i in range(54)]
+        snap=canonical({"schema_version":1,"records":records})
+        ledger=[{"source_id":r["source_id"],"original_sha256":digest(canonical(r["original"])),"disposition":"imported" if i==0 else "duplicate","target_offer_ids":[uid(3)],"reason":"Synthetic fixture"} for i,r in enumerate(records)]
+        self.assertEqual(verify_migration(SCHEMA,snap,digest(snap),ledger,{k:[] for k in data},data,DAY)["accounted"],54)
+        source=copy.deepcopy(data);source["05_OFFERS"][0]["offer_name"]="Prior retained offer"
+        with self.assertRaises(Invalid):verify_migration(SCHEMA,snap,digest(snap),ledger,source,data,DAY)
