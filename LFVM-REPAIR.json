@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "repository": "vixttha/LFVM",
+  "branch": "Lydite-Test-Vault",
+  "base_commit": "e54ed10ddceb4e8b19fa8317c002906807afd1f5",
+  "findings": [
+    "Permanent Test Vault validation absent"
+  ],
+  "links": [],
+  "added_paths": [
+    ".github/workflows/test-vault.yml",
+    "LFVM-REPAIR.json",
+    "README.md",
+    "tools/verify_lfvm_repair.py"
+  ],
+  "scope": "Additive repair; original LFVM-INSTALL.json is historical; current validation requires exact-checkout workflow evidence. No upstream version promotion, workbook creation, cross-branch write or release."
+}

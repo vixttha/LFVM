@@ -1,0 +1,78 @@
+name: LFVM Lydite-Test-Vault permanent verification
+on:
+  push:
+    branches: ['Lydite-Test-Vault']
+  pull_request:
+    branches: ['Lydite-Test-Vault']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: lfvm-verify-Lydite-Test-Vault-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  verify:
+    if: github.repository == 'vixttha/LFVM' && github.event.repository.private == false && (github.event_name != 'workflow_dispatch' || github.ref == 'refs/heads/Lydite-Test-Vault')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Verify exact checkout and historical installation
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          python -B tools/verify_lfvm_repair.py
+      - name: Native positive and negative regression checks
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -B test-vault/validate_catalog.py
+          tmp=$(mktemp -d)
+          trap 'rm -rf "$tmp"' EXIT
+          python - "$tmp" <<'PY'
+          import pathlib, sys
+          root=pathlib.Path(sys.argv[1])
+          s=pathlib.Path("test-vault/cases.md").read_text()
+          row=next(l for l in s.splitlines() if l.startswith("| LFVM-"))
+          (root/"bad-priority.md").write_text(s.replace("| P0 |","| P9 |",1))
+          (root/"duplicate.md").write_text(s.rstrip()+"\n"+row+"\n")
+          PY
+          for fixture in bad-priority duplicate; do
+            if python -B test-vault/validate_catalog.py --catalog "$tmp/$fixture.md" >"$tmp/$fixture.log" 2>&1; then
+              echo "Invalid catalog accepted: $fixture"; exit 1
+            fi
+            grep -F "Test Vault validation failed:" "$tmp/$fixture.log"
+          done
+          mkdir "$tmp/fixture" "$tmp/receipts"
+          cp -R test-vault "$tmp/fixture/"
+          cd "$tmp/fixture"
+          printf '\n| CLI-001 | Synthetic receipt example | P0 | Node and Python | Exact shared evidence verified |\n' >> test-vault/cases.md
+          git init -q
+          git add .
+          git -c user.name=LFVM-fixture -c user.email=fixture@example.invalid commit -qm "Synthetic receipt fixture"
+          export VAULT_EXAMPLE_RECEIPTS="$tmp/receipts" VAULT_EXAMPLE_EVIDENCE="$tmp/evidence.json" PYTHONDONTWRITEBYTECODE=1
+          # Keep synthetic receipt summary separate from the real LFVM checkout summary.
+          export GITHUB_STEP_SUMMARY="$tmp/synthetic-summary.md"
+          example=test-vault/examples/shared-evidence
+          node "$example/run-node.mjs"
+          python -B "$example/check.py"
+          python -B test-vault/verify_receipts.py --case "$example/case.json" --receipts "$VAULT_EXAMPLE_RECEIPTS" --evidence "$VAULT_EXAMPLE_EVIDENCE" | tee "$tmp/positive.log"
+          grep -F '**Overall: PASS**' "$tmp/positive.log"
+          printf '\n' >> "$VAULT_EXAMPLE_EVIDENCE"
+          if python -B test-vault/verify_receipts.py --case "$example/case.json" --receipts "$VAULT_EXAMPLE_RECEIPTS" --evidence "$VAULT_EXAMPLE_EVIDENCE" >"$tmp/negative.log" 2>&1; then
+            echo "Tampered evidence accepted"; exit 1
+          fi
+          grep -F '**Overall: FAIL**' "$tmp/negative.log"
+          echo 'PASS: synthetic shared receipt and tamper rejection; not a workbook execution receipt'
+      - name: Record exact checkout and clean state
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -z "$(git status --porcelain)"
+          printf 'LFVM verification checkout: %s\nRun / attempt: %s / %s\nScope: installation and regression controls only; no workbook or release acceptance.\n' "$(git rev-parse HEAD)" "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" >> "$GITHUB_STEP_SUMMARY"
