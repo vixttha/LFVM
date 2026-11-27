@@ -181,6 +181,11 @@ class FoundationTests(unittest.TestCase):
         for v in ("=1+1","+1","-1","@SUM(A1)"," \t=1","\nabc","\uff1d1"):
             self.assertEqual(safe_csv_text(v),"'"+v)
         self.assertEqual(safe_csv_text("Oracle Cloud"),"Oracle Cloud")
+        for value in ("\ufeff=1", "\u200b+1", "\u202e@SUM(A1)", " \u200b-1", "\uff0b1"):
+            with self.subTest(value=value):
+                self.assertEqual(safe_csv_text(value), "'" + value)
+        with self.assertRaises(Invalid):
+            safe_csv_text("x\x00y")
 
 
 class PackageTests(unittest.TestCase):
@@ -208,6 +213,27 @@ class PackageTests(unittest.TestCase):
     def test_duplicate_relationship_id(self): self.package({"_rels/.rels":'<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="r1" Type="urn:synthetic" Target="xl/workbook.xml"/><Relationship Id="r1" Type="urn:synthetic" Target="xl/workbook.xml"/></Relationships>'})
     def test_xml_entity(self): self.package({"xl/workbook.xml":'<!DOCTYPE x [<!ENTITY y "unsafe">]><x/>'})
     def test_zip_ratio(self): self.package({"xl/big.xml":"<x>"+"a"*1000000+"</x>"})
+    def test_active_xml_element(self):
+        self.package({"xl/worksheets/sheet1.xml":'<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><oleObjects/></worksheet>'})
+    def test_auto_defined_name(self):
+        self.package({"xl/workbook.xml":'<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><definedNames><definedName name="Auto_Open">1</definedName></definedNames></workbook>'})
+    def test_duplicate_content_type(self):
+        self.package({"[Content_Types].xml":'<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="xml" ContentType="application/xml"/><Default Extension="XML" ContentType="application/xml"/></Types>'})
+    def test_orphan_override(self):
+        self.package({"[Content_Types].xml":'<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Override PartName="/xl/absent.xml" ContentType="application/xml"/></Types>'})
+    def test_special_zip_file(self):
+        import stat
+        with tempfile.TemporaryDirectory() as tmp:
+            p = Path(tmp) / "synthetic.xlsx"
+            with zipfile.ZipFile(p, "w") as z:
+                for name, content in self.PARTS.items():
+                    z.writestr(name, content)
+                entry = zipfile.ZipInfo("xl/special.xml")
+                entry.create_system = 3
+                entry.external_attr = (stat.S_IFIFO | 0o600) << 16
+                z.writestr(entry, "<x/>")
+            with self.assertRaises(Invalid):
+                preflight_xlsx(p)
     def test_invalid_bytes(self):
         with tempfile.TemporaryDirectory() as tmp:
             p=Path(tmp)/"not.xlsx"; p.write_bytes(b"not zip")

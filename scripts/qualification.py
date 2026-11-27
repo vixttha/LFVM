@@ -351,7 +351,7 @@ def public_url(value):
     except ValueError:
         require("." in host and bool(re.fullmatch(r"[a-z0-9.-]+", host)) and bool(re.fullmatch(r"[a-z][a-z0-9-]*",host.rsplit(".",1)[-1])), "nonpublic or ambiguous hostname")
     else:
-        require(addr.is_global, "nonpublic IP address")
+        require(addr.is_global and not (addr.is_multicast or addr.is_reserved or addr.is_unspecified or addr.is_link_local), "nonpublic or special-use IP address")
     decoded = unquote(value)
     require(SECRET.search(decoded) is None and not any(ord(c) < 32 for c in decoded), "sensitive or unsafe URL content")
     require(not any(SENSITIVE_QUERY.search(k) for k,_ in parse_qsl(u.query,keep_blank_values=True)), "sensitive URL parameter")
@@ -362,7 +362,7 @@ def public_url(value):
 def public_text(value):
     require(type(value) is str and len(value) <= 65536 and "\x00" not in value, "invalid public text")
     require(SECRET.search(value) is None, "potential credential in public data")
-    for candidate in re.findall(r"https?://[^\s<>\"']+",value):
+    for candidate in re.findall(r"https?://[^\s<>\"']+",value,flags=re.IGNORECASE):
         public_url(candidate.rstrip(".,);]"))
     return True
 

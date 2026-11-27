@@ -214,6 +214,12 @@ class DataBoundaryTests(unittest.TestCase):
         with self.assertRaises(Invalid): public_text("ghp_"+("a"*36))
         with self.assertRaises(Invalid): public_text("see https://example.org?token=placeholder")
         self.assertTrue(public_text("public research URL https://example.org/pricing"))
+        with self.assertRaises(Invalid):
+            public_text("unsafe uppercase scheme HTTP://example.org/?token=fixture")
+        with self.assertRaises(Invalid):
+            public_url("https://224.0.0.1/")
+        with self.assertRaises(Invalid):
+            public_url("https://[ff02::1]/")
 
     def source_fixture(self):
         originals=[{"source_id":f"src-{i}","original":{"title":f"synthetic source {i}","url":"https://example.org"}} for i in range(54)]
