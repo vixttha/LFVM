@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "template_version": "v0.0.0.1",
+  "predecessor": null,
+  "status": "audit_pending",
+  "owner_implementation_approved": false,
+  "owner_locked": false,
+  "artifact": null,
+  "artifact_sha256": null,
+  "research_data_included": false,
+  "audit": {
+    "open": 28,
+    "closed": 0
+  },
+  "validation": {
+    "planned": 30,
+    "executed": 0,
+    "passed": 0
+  },
+  "documents": [
+    "README.md",
+    "PLAN.md",
+    "AUDIT.md",
+    "CHANGES.md",
+    "VALIDATION.md"
+  ]
+}

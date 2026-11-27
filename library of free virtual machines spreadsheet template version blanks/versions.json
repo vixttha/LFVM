@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "branch": "library-of-free-virtual-machines-spreadsheet-template",
+  "active_version": "v0.0.0.1",
+  "versions": [
+    {
+      "version": "v0.0.0.1",
+      "path": "v0.0.0.1",
+      "predecessor": null,
+      "status": "audit_pending",
+      "artifact": null,
+      "locked": false
+    }
+  ]
+}
