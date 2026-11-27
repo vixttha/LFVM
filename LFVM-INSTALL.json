@@ -1,0 +1,31 @@
+{
+  "attempt": "1",
+  "bootstrap_sha": "1432f4929ecd153804a4c38414a21095f2116bb8",
+  "branch": "Lydite-Test-Vault",
+  "files_sha256": {
+    "AGENTS.md": "3962c0d268ad0f44fa17ebba68509acc5ecfcac743b90241b89b6d8f4af23a89",
+    "LFVM-CONTEXT.md": "b21c9040d9cbfab10520ea8e4e4683a5b07ea7f8cada2cd3f60e7e3f63475ec3",
+    "test-vault/CHANGELOG.md": "a7dd4cad7cb7f3c7143fa79d46a879f351cb0d1f9b0111e2d7e5bc895d1b595b",
+    "test-vault/LICENSE": "175dfc08f61924dd54523e2ccbd297cd544e565c4f6c32a4b1309ad67699d9cb",
+    "test-vault/README.md": "e9bb49496ffd010641c95b5c413c4595c51f0d96908bdba8700c6c4a3c8d4a00",
+    "test-vault/UPGRADE.md": "82a2f7276c1648f84aa0d4d2d4fd55ede0b20393849582e0064b9bc777d0d7c0",
+    "test-vault/case-and-receipt.md": "60ec537166efce0ede4d9495a511e15bb4d19046f8732a104deaa687fdefe1e9",
+    "test-vault/cases.md": "d521f11813efc6aba1d1393f0a53e5d1145a0f7538aff58644632253754d535d",
+    "test-vault/evidence.md": "cae5e411fbd8c3e45e78e150f536741b3429130f1793a8591328f55c01e4a73f",
+    "test-vault/examples/shared-evidence/README.md": "0e30f854c48bc7e2e61f04c9b30772e7bcf3b57c8997903c93efa308b778c135",
+    "test-vault/examples/shared-evidence/app.mjs": "ba0d9a26884f5ed8e1c803f95dca7858a2296b3939938763c8918b3524595f67",
+    "test-vault/examples/shared-evidence/app.test.mjs": "81169c8fd472021c5e4b89675e6b4d2a3b4839c21063b2f0c31875148cc406ee",
+    "test-vault/examples/shared-evidence/case.json": "4bae63d4845f978b7d88076ea9cecf346e13f8624355ec731512f4b773dcb4a1",
+    "test-vault/examples/shared-evidence/check.py": "a0b0747f788443c4f04666d84f7a2ddb6c06fab3f03c7b15850cc7418dad3238",
+    "test-vault/examples/shared-evidence/run-node.mjs": "61bc55ec257ef0a701fab30f438c7a10371e5ab111c82c60bbb003a26fec2655",
+    "test-vault/source_commit.py": "e04435ad43ea66ea710bea9d0dfe95599e9476a1b63db25f5c8d4798dd53ad73",
+    "test-vault/validate_catalog.py": "3e68b2ed0a6b7bd5187230521b65e82dd36a5bb8a31fc4a4612bd7c7d12a2941",
+    "test-vault/verify_receipts.py": "92cbd79a79e2743efe857db9c55d80446ca605f039c80998f533d700584470bf"
+  },
+  "native_checks": "passed",
+  "repository": "vixttha/LFVM",
+  "source_repository": "vixttha/Lydite-Test-Vault-Template",
+  "source_sha": "a19c58a5b005bfab3e60b0b16aae13bf01023118",
+  "validation_run": "45922034330",
+  "version_status": "v0.0.4.75 isolated repair draft; v0.0.4 published; v0.0.5 held; starter component v0.0.3"
+}
