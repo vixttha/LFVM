@@ -97,7 +97,7 @@ def evidence_check(schema, data, as_of):
             key=(table,rid,field)
             current=[(e,v,rd) for e,v,rd,due in evidence.get(key,[]) if due>=as_of and MIN_GRADE[e["grade"]]>=minimum]
             require(any(e["outcome"]=="supports" and equal_value(v,val) for e,v,_ in current),"missing current material evidence: "+table+"."+field)
-            require(not any(e["outcome"]=="contradicts" for e,_,_ in current),"unresolved current contradictory material evidence")
+            require(not any(e["outcome"]=="contradicts" and due>=as_of and MIN_GRADE[e["grade"]]>=3 for e,_,_,due in evidence.get(key,[])),"unresolved current contradictory material evidence")
             if minimum==6:
                 require(any(e["outcome"]=="supports" and equal_value(v,val) and e["scenario"] for e,v,_ in current),"missing exact E6 scenario")
             covered+=1
@@ -126,6 +126,7 @@ def col_name(n):
 def parse_cell(cell, shared):
     require(cell.find(M+"f") is None,"formula forbidden in draft workbook")
     typ=cell.get("t","n")
+    require(all(c.tag in {M+"v",M+"is"} for c in cell) and len(cell)<=1,"unexpected or duplicate cell payload")
     v=cell.find(M+"v")
     if typ=="inlineStr":
         require(v is None,"ambiguous inline cell")
@@ -148,7 +149,7 @@ def parse_cell(cell, shared):
     try:
         result=int(raw) if re.fullmatch(r"-?(?:0|[1-9][0-9]*)",raw) else float(raw)
     except (ValueError,OverflowError) as exc: raise Invalid("invalid numeric cell") from exc
-    require(math.isfinite(result),"non-finite numeric cell")
+    require(type(result) in (int,float) and abs(result)<=1e15 and math.isfinite(result),"non-finite or nonportable numeric cell")
     return result
 
 def rels(parts, owner):
@@ -218,9 +219,9 @@ def control_tables(schema, control, counts, filename, blank):
     require(seen==set(tables) and len(datasets)==1 and len(editions)==1,"incomplete or inconsistent manifest")
     research_ids={r for r in ids}
     require(not research_ids.intersection(datasets),"dataset ID collides with partition ID")
-    return ids|datasets
+    return {"partition_ids":ids,"dataset_id":next(iter(datasets)),"data_version":next(iter(editions))}
 
-def read_draft_xlsx(path,schema,*,blank):
+def _read_partition(path,schema,*,blank):
     """Strict, macro-free canonical subset. Date fields must be ISO text.
 
     Table header-only is represented by a row-1 range. Actual Excel UI
@@ -295,6 +296,9 @@ def read_draft_xlsx(path,schema,*,blank):
         if name=="00_README":
             require(root.find(M+"tableParts") is None,"README must not contain a research table")
             require(all(v is None or type(v) is str for row in rows for v in row.values()),"README must be literal text")
+            for row in rows:
+                for val in row.values():
+                    if val is not None and val.strip(): public_text(val)
             continue
         headers=[c["name"] for c in tablemap[name]["columns"]]
         width=len(headers)
@@ -326,11 +330,73 @@ def read_draft_xlsx(path,schema,*,blank):
     require(len(used_parts)==12 and len(used_tables)==11,"incomplete workbook inventory")
     require({n for n in parts if re.fullmatch(r"xl/worksheets/[^/]+\.xml",n)}==used_parts,"orphan worksheet")
     require({n for n in parts if re.fullmatch(r"xl/tables/[^/]+\.xml",n)}==used_tables,"orphan table")
-    validate_records(schema,data)
-    control_ids=control_tables(schema,control,counts,path.name,blank)
-    research_ids={r[t["primary_key"]] for t in schema["tables"] if t["sheet"] in RESEARCH for r in data[t["sheet"]]}
-    require(not control_ids.intersection(research_ids),"control and research IDs collide")
-    return {"sha256":original,"table_rows":counts,"research":data,"workbook_qualified":False}
+    identity=control_tables(schema,control,counts,path.name,blank)
+    return {"sha256":original,"table_rows":counts,"research":data,
+            "identity":identity,"workbook_qualified":False}
+
+def read_draft_xlsx(path,schema,*,blank):
+    proof=_read_partition(path,schema,blank=blank)
+    validate_records(schema,proof["research"])
+    reject_control_collisions(schema,proof["research"],proof["identity"]["partition_ids"]|{proof["identity"]["dataset_id"]})
+    return proof
+
+def reject_control_collisions(schema, data, control_ids):
+    ids={r[t["primary_key"]] for t in schema["tables"] if t["sheet"] in RESEARCH for r in data[t["sheet"]]}
+    ids.update(r["claim_id"] for r in data["09_EVIDENCE"])
+    require(not control_ids.intersection(ids),"control and research IDs collide")
+
+def read_partitioned_library(root,schema,index_bytes,expected_index_sha,as_of):
+    """Verify an independently pinned, immutable multi-XLSX edition.
+
+    Each physical workbook has local control metadata and all 12 sheets. The
+    external index is authoritative for its file inventory and global counts.
+    Cross-workbook foreign keys resolve only after every member is read.
+    No workbook creation, approval or publication occurs here.
+    """
+    validate_design(schema)
+    regular(root,True)
+    require(digest(index_bytes)==expected_index_sha,"external index digest mismatch")
+    index=strict_json(index_bytes)
+    require(type(index) is dict and set(index)=={"schema_sha256","dataset_id","data_version","files","global_counts"},"edition index shape")
+    require(index["schema_sha256"]==digest(canonical(schema)),"edition schema mismatch")
+    require(check_id(index["dataset_id"]),"invalid edition dataset ID")
+    version(index["data_version"])
+    entries=index["files"]
+    require(type(entries) is list and 0<len(entries)<=128,"workbook partition count limit")
+    actual=artifact_inventory(root)
+    require(all(e["path"].endswith(".xlsx") and "/" not in e["path"] for e in actual),"unexpected edition file")
+    require(len(actual)==len(entries),"edition inventory count mismatch")
+    by_path={e["path"]:e for e in actual}
+    all_rows={name:[] for name in RESEARCH}
+    partition_ids=set()
+    seen=set()
+    total=0
+    for e in entries:
+        require(type(e) is dict and set(e)=={"path","sha256","size_bytes","table_rows"},"partition entry shape")
+        name=e["path"]
+        require(type(name) is str and name in by_path and name not in seen,"missing or duplicate partition path")
+        require(type(e["size_bytes"]) is int and e["size_bytes"]==by_path[name]["size_bytes"] and e["size_bytes"]<=52428800,"partition size mismatch or limit")
+        require(e["sha256"]==by_path[name]["sha256"],"partition checksum mismatch")
+        proof=_read_partition(root/name,schema,blank=False)
+        require(proof["sha256"]==e["sha256"],"partition changed while reading")
+        require(canonical(proof["table_rows"])==canonical(e["table_rows"]),"partition table counts mismatch")
+        identity=proof["identity"]
+        require(identity["dataset_id"]==index["dataset_id"] and identity["data_version"]==index["data_version"],"mixed dataset or edition")
+        require(not partition_ids.intersection(identity["partition_ids"]),"duplicate partition IDs")
+        partition_ids.update(identity["partition_ids"])
+        for k in RESEARCH:
+            total+=len(proof["research"][k])
+            require(total<=1000000,"edition validation budget exceeded; use a future streaming index")
+            all_rows[k].extend(proof["research"][k])
+        seen.add(name)
+    require(seen==set(by_path),"unregistered partition")
+    require(artifact_inventory(root)==actual,"edition changed during validation")
+    counts=validate_records(schema,all_rows)
+    require(canonical(counts)==canonical(index["global_counts"]),"global table counts mismatch")
+    reject_control_collisions(schema,all_rows,partition_ids|{index["dataset_id"]})
+    evidence_check(schema,all_rows,as_of)
+    return {"index_sha256":expected_index_sha,"global_counts":counts,
+            "partition_count":len(entries),"research":all_rows,"workbook_qualified":False}
 
 def verify_migration(schema, snapshot, snapshot_sha, ledger, source, result, as_of):
     """Validate preserved source bytes and canonical record identity before staging."""

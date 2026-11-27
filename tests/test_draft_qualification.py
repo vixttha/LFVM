@@ -10,7 +10,7 @@ from xml.etree import ElementTree as ET
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/"scripts"))
 from foundation import Invalid
 from qualification import artifact_inventory, canonical, digest
-from draft_qualification import evidence_check, read_draft_xlsx, publish_staged_pointer, verify_migration, M, R, P, T, col_name
+from draft_qualification import evidence_check, read_draft_xlsx, read_partitioned_library, publish_staged_pointer, verify_migration, M, R, P, T, col_name
 from test_draft_records import SCHEMA, fixture, row, uid
 
 DAY=date(2026,1,10)
@@ -50,7 +50,7 @@ class EvidenceTests(unittest.TestCase):
             e=copy.deepcopy(d["09_EVIDENCE"][0]);e.update(evidence_id=uid(90),claim_id=uid(91));d["09_EVIDENCE"].append(e)
         self.reject(edit)
 
-def package(path,data=None,mutate=None):
+def package(path,data=None,mutate=None,partition_offset=0,dataset=999,edition="v0.0.0.1"):
     """Build disposable OOXML test fixture, never a release artifact."""
     parts={}
     def root(tag,**attrs):return ET.Element(tag,attrs)
@@ -69,7 +69,7 @@ def package(path,data=None,mutate=None):
     contents=copy.deepcopy(data or {})
     contents["02_DICTIONARY"]=[row("02_DICTIONARY",field_id=name+"."+c["name"],table_name=name,column_name=c["name"],data_type=c["type"],required=c["required"],description=c["description"],foreign_key=t.get("foreign_keys",{}).get(c["name"])) for name,t in tables.items() for c in t["columns"]]
     contents["03_TAXONOMY"]=[row("03_TAXONOMY",taxonomy_id=family+":"+code,family=family,code=code,display_label=code,definition="Synthetic definition",deprecated=False) for family,values in SCHEMA["enums"].items() for code in values]
-    contents["01_MANIFEST"]=[row("01_MANIFEST",partition_id=uid(1000+i),dataset_id=uid(999),schema_version=SCHEMA["template_version"],data_version=None if data is None else "v0.0.0.1",relative_path=path.name,table_name=name,record_count=len(tables) if name=="01_MANIFEST" else len(contents.get(name,[])),partition_state="active") for i,name in enumerate(tables)]
+    contents["01_MANIFEST"]=[row("01_MANIFEST",partition_id=uid(1000+i+partition_offset),dataset_id=uid(dataset),schema_version=SCHEMA["template_version"],data_version=None if data is None else edition,relative_path=path.name,table_name=name,record_count=len(tables) if name=="01_MANIFEST" else len(contents.get(name,[])),partition_state="active") for i,name in enumerate(tables)]
     ET.SubElement(types,ct+"Override",PartName="/xl/workbook.xml",ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml")
     def add_cell(rr,i,n,v):
         if v is None:return
@@ -195,3 +195,57 @@ class RecoveryTests(unittest.TestCase):
         self.assertEqual(verify_migration(SCHEMA,snap,digest(snap),ledger,{k:[] for k in data},data,DAY)["accounted"],54)
         source=copy.deepcopy(data);source["05_OFFERS"][0]["offer_name"]="Prior retained offer"
         with self.assertRaises(Invalid):verify_migration(SCHEMA,snap,digest(snap),ledger,source,data,DAY)
+
+
+class MultiWorkbookTests(unittest.TestCase):
+    def setUp(self):
+        self.tmp=tempfile.TemporaryDirectory();self.addCleanup(self.tmp.cleanup)
+        self.root=Path(self.tmp.name)
+        self.data=evidence_fixture()
+    def write(self, duplicate=False, offset=100, dataset=999, edition="v0.0.0.1", drop_provider=False):
+        first={k:[] for k in self.data};second=copy.deepcopy(self.data)
+        first["04_PROVIDERS"]=second["04_PROVIDERS"]
+        if not duplicate:second["04_PROVIDERS"]=[]
+        if drop_provider:first["04_PROVIDERS"]=[]
+        package(self.root/"a.xlsx",first)
+        package(self.root/"b.xlsx",second,partition_offset=offset,dataset=dataset,edition=edition)
+        entries=[]
+        for p,rows in [(self.root/"a.xlsx",first),(self.root/"b.xlsx",second)]:
+            entries.append({"path":p.name,"sha256":digest(p.read_bytes()),"size_bytes":p.stat().st_size,
+              "table_rows":{**{k:len(v) for k,v in rows.items()},"01_MANIFEST":11,"02_DICTIONARY":149,
+              "03_TAXONOMY":sum(len(v) for v in SCHEMA["enums"].values())}})
+        return {"schema_sha256":digest(canonical(SCHEMA)),"dataset_id":uid(999),"data_version":"v0.0.0.1",
+                "files":entries,"global_counts":{k:len(v) for k,v in self.data.items()}}
+    def verify(self,index):
+        raw=canonical(index)
+        return read_partitioned_library(self.root,SCHEMA,raw,digest(raw),DAY)
+    def test_cross_workbook_references(self):
+        self.assertEqual(self.verify(self.write())["research"],self.data)
+    def test_duplicate_global_record(self):
+        with self.assertRaises(Invalid):self.verify(self.write(duplicate=True))
+    def test_duplicate_partition(self):
+        with self.assertRaises(Invalid):self.verify(self.write(offset=0))
+    def test_different_dataset(self):
+        with self.assertRaises(Invalid):self.verify(self.write(dataset=998))
+    def test_different_edition(self):
+        with self.assertRaises(Invalid):self.verify(self.write(edition="v0.0.0.2"))
+    def test_missing_provider(self):
+        with self.assertRaises(Invalid):self.verify(self.write(drop_provider=True))
+    def test_unregistered_file(self):
+        index=self.write();(self.root/"unregistered.xlsx").write_bytes(b"x")
+        with self.assertRaises(Invalid):self.verify(index)
+    def test_wrong_digest(self):
+        index=self.write();index["files"][0]["sha256"]="0"*64
+        with self.assertRaises(Invalid):self.verify(index)
+    def test_wrong_global_count(self):
+        index=self.write();index["global_counts"]["05_OFFERS"]=99
+        with self.assertRaises(Invalid):self.verify(index)
+    def test_wrong_local_count(self):
+        index=self.write();index["files"][0]["table_rows"]["04_PROVIDERS"]=99
+        with self.assertRaises(Invalid):self.verify(index)
+    def test_untrusted_index(self):
+        raw=canonical(self.write())
+        with self.assertRaises(Invalid):read_partitioned_library(self.root,SCHEMA,raw,"0"*64,DAY)
+    def test_schema_mismatch(self):
+        index=self.write();index["schema_sha256"]="0"*64
+        with self.assertRaises(Invalid):self.verify(index)
